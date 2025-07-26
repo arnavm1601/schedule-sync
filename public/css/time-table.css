@@ -1,0 +1,237 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+}
+
+.main-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 250px;
+    background-color: #2c3e50; /* Darker background for sidebar */
+    color: white;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #ecf0f1;
+}
+
+.sidebar-header i {
+    margin-right: 10px;
+    color: #3498db; /* Icon color */
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: 10px; /* Space between menu items */
+}
+
+/* Styling for sidebar navigation links to look like buttons */
+.sidebar-menu a {
+    display: block;
+    padding: 12px 15px;
+    color: #333; /* Dark text color */
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 1em;
+    background-color: #ecf0f1; /* Light background color */
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box; /* Ensures padding is included in the width */
+}
+
+.sidebar-menu a:hover {
+    background-color: #3498db; /* Blue background on hover */
+    color: white; /* White text on hover */
+}
+
+/* Existing sidebar button styling (Meeting, Scheduling, Upcoming Event) */
+.sidebar-button {
+    display: block;
+    padding: 12px 15px;
+    color: white; /* Default white text, will be overridden by specific button styles */
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 1em;
+    background: none; /* Default transparent, will be overridden by specific button styles */
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box; /* Ensures padding is included in the width */
+}
+
+.sidebar-button:hover {
+    background-color: #34495e; /* Slightly lighter on hover for default buttons */
+}
+
+/* Specific styling for Meeting and Scheduling buttons if they need distinct initial colors */
+.sidebar-menu li .sidebar-button {
+    background-color: #ecf0f1; /* Light background for Meeting/Scheduling when not active */
+    color: #333; /* Dark text for Meeting/Scheduling when not active */
+}
+
+.sidebar-menu li .sidebar-button:hover {
+    background-color: #3498db; /* Blue background on hover */
+    color: white; /* White text on hover */
+}
+
+.sidebar-menu i {
+    margin-right: 10px;
+    width: 20px; /* Ensure consistent icon alignment */
+}
+
+.sidebar-section-title {
+    font-size: 0.9em;
+    color: #bdc3c7;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding-left: 15px;
+}
+
+.upcoming-event {
+    margin-top: auto; /* Pushes the button to the bottom */
+    background-color: #3498db; /* Blue button */
+    text-align: center;
+    font-weight: bold;
+    padding: 15px;
+    box-sizing: border-box; /* Added to ensure padding is included in the width */
+}
+
+.upcoming-event:hover {
+    background-color: #2980b9;
+}
+
+/* Main Content Area */
+.content-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar Styling */
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Space out left and right sections */
+    align-items: center;
+    padding: 15px 30px;
+    background-color: #ffffff; /* White background for navbar */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    color: #333;
+}
+
+.navbar-left span {
+    margin-right: 15px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-name {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.profile-pic {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #3498db; /* Border color to match theme */
+}
+
+/* Logout button styling */
+.logout-button {
+    background-color: #dc3545; /* Red color for logout */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.9em;
+    margin-left: 15px; /* Space from profile pic */
+    transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}
+
+.logout-button i {
+    margin-right: 5px;
+}
+
+/* Timetable Styling */
+.timetable-section {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin: 30px; /* Margin around the timetable section */
+    overflow-x: auto; /* Allows horizontal scrolling for small screens */
+}
+
+.timetable-section h3 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.timetable-table {
+    width: 100%;
+    border-collapse: separate; /* Use separate for rounded corners on cells */
+    border-spacing: 0;
+    margin-bottom: 20px;
+}
+
+.timetable-table th,
+.timetable-table td {
+    border: 1px solid #e0e0e0; /* Lighter border for cells */
+    padding: 12px;
+    height: 50px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.9em;
+}
+
+.timetable-table th {
+    background-color: #f5f5f5; /* Light grey header background */
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap; /* Prevent period headers from wrapping */
+}
+
+.day-header {
+    background-color: #e9e9e9;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}

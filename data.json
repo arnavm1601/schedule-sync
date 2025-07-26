@@ -1,0 +1,10 @@
+{
+    "name": "Arnav",
+    "age": 19,
+    "subjects": [
+        "C",
+        "C++",
+        "Java"
+    ],
+    "isStudent": true
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Arnav Mittal",
+    "email": "mittalarnav1601@gmail.com",
+    "password": "123",
+    "role": "admin",
+    "profilePic": "1753167158461.jpg"
+  },
+  {
+    "name": "gvbg",
+    "email": "gvbg7689@gmail.com",
+    "password": "123",
+    "role": "teacher",
+    "profilePic": "1753167696807.jpg"
+  },
+  {
+    "name": "modi",
+    "email": "narendramodi123@codeqoutient.com",
+    "password": "123",
+    "role": "teacher",
+    "profilePic": "1753168092174.jpg"
+  }
+]
