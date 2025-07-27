@@ -24,6 +24,17 @@
                 <li><button class="sidebar-button"><i class="fas fa-cloud"></i> Scheduling</button></li>
             </ul>
             <button class="sidebar-button upcoming-event"><i class="fas fa-bell"></i> Upcoming Event</button>
+
+            <!-- Selected Teacher Details - MOVED HERE -->
+            <div id="teacherDetails" class="teacher-details-display" style="display: none;">
+                <h4>Selected Teacher Details:</h4>
+                <p><strong>Name:</strong> <span id="detailName"></span></p>
+                <p><strong>Email:</strong> <span id="detailEmail"></span></p>
+                <p><strong>Role:</strong> <span id="detailRole"></span></p>
+                <div style="text-align: center;">
+                    <img id="detailProfilePic" src="" alt="Profile Pic" class="detail-profile-pic" />
+                </div>
+            </div>
         </div>
 
         <div class="content-area">
@@ -48,16 +59,6 @@
                             <option value="<%= teacher.email %>"><%= teacher.name %> - <%= teacher.email %></option>
                         <% }) %>
                     </select>
-                </div>
-
-                <div id="teacherDetails" class="teacher-details-display" style="display: none;">
-                    <h4>Selected Teacher Details:</h4>
-                    <p><strong>Name:</strong> <span id="detailName"></span></p>
-                    <p><strong>Email:</strong> <span id="detailEmail"></span></p>
-                    <p><strong>Role:</strong> <span id="detailRole"></span></p>
-                    <div style="text-align: center;">
-                        <img id="detailProfilePic" src="" alt="Profile Pic" class="detail-profile-pic" />
-                    </div>
                 </div>
 
                 <div class="timetable-section" id="timetable-section">
@@ -346,16 +347,16 @@
                     document.getElementById('detailEmail').textContent = selectedTeacher.email;
                     document.getElementById('detailRole').textContent = selectedTeacher.role;
                     document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
-                    teacherDetailsDiv.style.display = 'block';
+                    teacherDetailsDiv.style.display = 'block'; // Show when a teacher is selected
 
                     const teacherTimetable = allTimetables[currentSelectedTeacherEmail] || getDefaultTimetable();
                     populateTimetable(teacherTimetable);
                 } else {
-                    teacherDetailsDiv.style.display = 'none';
+                    teacherDetailsDiv.style.display = 'none'; // Hide if no teacher or not found
                     clearTimetable();
                 }
             } else {
-                teacherDetailsDiv.style.display = 'none';
+                teacherDetailsDiv.style.display = 'none'; // Hide if "Select a Teacher" is chosen
                 clearTimetable();
             }
         });
@@ -818,8 +819,7 @@
         function getDefaultTimetable() {
             const defaultTimetable = {};
             days.forEach(day => {
-                // Changed to 7 periods
-                defaultTimetable[day] = Array(7).fill(null);
+                defaultTimetable[day] = Array(8).fill(null); // 8 periods, initially null
             });
             return defaultTimetable;
         }
