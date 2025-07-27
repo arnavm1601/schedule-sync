@@ -7,9 +7,10 @@
 </head>
 <body>
     <div class="main-container">
+        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                Time Table
+           Schedule Sync
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
@@ -94,17 +95,39 @@
     </div>
 
     <script>
-        const allTimetables = JSON.parse('<%- JSON.stringify(allTimetables).split("</script>").join("<\\/script>") %>');
-        const teachersData = JSON.parse('<%- JSON.stringify(teachers).split("</script>").join("<\\/script>") %>');
+        // Helper function to escape string for JavaScript literal
+        // Assuming you have an escapeString function defined somewhere, for example:
+function escapeString(str) {
+    if (typeof str !== 'string') {
+        return str; // Or handle non-string types as needed
+    }
+    return str
+        .replace(/\\/g, '\\\\') // Escape backslashes first
+        .replace(/'/g, "\\'")   // Escape single quotes
+        .replace(/"/g, '\\"')   // Escape double quotes
+        .replace(/\n/g, '\\n')  // Escape newlines
+        .replace(/\r/g, '\\r')  // Escape carriage returns
+        .replace(/\t/g, '\\t'); // Escape tabs
+}
+
+// When rendering your EJS template:
+app.get('/admin', (req, res) => {
+    // ... (fetch allTimetables and teachers data) ...
+
+    res.render('admin', {
+        allTimetables: allTimetables,
+        teachers: teachers, 
+        escapeString: escapeString     });
+});
+        const allTimetables = JSON.parse('<%- escapeJsString(JSON.stringify(allTimetables)) %>');
+        const teachersData = JSON.parse('<%- escapeJsString(JSON.stringify(teachers)) %>');
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
         function populateTimetable(timetable) {
             days.forEach(day => {
                 for (let i = 0; i < 8; i++) {
                     const input = document.getElementById(`${day}_period_${i}`);
-                    if (input) {
-                        input.value = (timetable && timetable[day] && timetable[day][i]) ? timetable[day][i] : '';
-                    }
+                    if (input) input.value = (timetable && timetable[day] && timetable[day][i]) ? timetable[day][i] : '';
                 }
             });
         }
@@ -113,9 +136,7 @@
             days.forEach(day => {
                 for (let i = 0; i < 8; i++) {
                     const input = document.getElementById(`${day}_period_${i}`);
-                    if (input) {
-                        input.value = '';
-                    }
+                    if (input) input.value = '';
                 }
             });
         }
@@ -128,12 +149,14 @@
 
             if (selectedEmail) {
                 const selectedTeacher = teachersData.find(t => t.email === selectedEmail);
+
                 if (selectedTeacher) {
                     document.getElementById('detailName').textContent = selectedTeacher.name;
                     document.getElementById('detailEmail').textContent = selectedTeacher.email;
                     document.getElementById('detailRole').textContent = selectedTeacher.role;
                     document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
                     teacherDetailsDiv.style.display = 'block';
+
                     const teacherTimetable = allTimetables[selectedEmail] || {};
                     populateTimetable(teacherTimetable);
                 } else {
@@ -150,6 +173,7 @@
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+
             document.getElementById('currentDate').textContent = `Today: ${now.toLocaleDateString('en-US', dateOptions)}`;
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }

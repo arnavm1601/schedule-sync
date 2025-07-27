@@ -13,7 +13,7 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-   Time Table
+                <i class="fas fa-sync-alt"></i> Schedule Sync
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/timetable"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
@@ -28,7 +28,10 @@
             </ul>
             <button class="sidebar-button upcoming-event"><i class="fas fa-bell"></i> Upcoming Event</button>
         </div>
+
+        <!-- Main content area -->
         <div class="content-area">
+            <!-- Navbar -->
             <div class="navbar">
                 <div class="navbar-left">
                     <span class="navbar-date" id="currentDate"></span>
@@ -40,6 +43,8 @@
                     <a href="/logout" class="logout-button"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
+
+            <!-- Timetable section -->
             <div class="timetable-section">
                 <h3>Time Table</h3>
                 <table class="timetable-table">
@@ -68,6 +73,7 @@
     </div>
 
     <script>
+        // Function to update live time and date
         function updateLiveTime() {
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
@@ -76,6 +82,8 @@
             document.getElementById('currentDate').textContent = `Today: ${now.toLocaleDateString('en-US', dateOptions)}`;
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
+
+        // Update time immediately and then every second
         updateLiveTime();
         setInterval(updateLiveTime, 1000);
     </script>

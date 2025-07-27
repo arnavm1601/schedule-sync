@@ -19,5 +19,12 @@
     "password": "123",
     "role": "teacher",
     "profilePic": "1753168092174.jpg"
+  },
+  {
+    "name": "abc",
+    "email": "abc@gmail.com",
+    "password": "123",
+    "role": "teacher",
+    "profilePic": "1753597590019.jpg"
   }
 ]

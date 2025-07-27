@@ -1,7 +1,7 @@
 body {
      background: url('https://images.pexels.com/photos/531880/pexels-photo-531880.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500') no-repeat center center fixed;
-    background-size: cover;
-    background-color: #f0f2f5; 
+    background-size: cover; 
+    background-color: white; 
     display: flex;
     justify-content: center;
     align-items: center;

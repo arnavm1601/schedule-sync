@@ -3,6 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+const { v4: uuidv4 } = require('uuid'); // Import UUID generator
 
 
 const app = express();
@@ -12,10 +13,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.use(session({
-    secret: 'azesxdrctfvgybhunijmko,p',
+    secret: 'fdshjk7394i', // Changed secret for security
     resave: false,
     saveUninitialized: true
 }));
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, 'public/uploads'));
@@ -26,8 +28,12 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage });
+
 const userDataPath = path.join(__dirname, 'data', 'users.json');
 const timetablePath = path.join(__dirname, 'data', 'timetable.json');
+const adjustmentsPath = path.join(__dirname, 'data', 'adjustments.json'); // New path for adjustments
+
+// Helper functions for reading/writing JSON files
 function readUsers() {
     try {
         const data = fs.readFileSync(userDataPath, 'utf8');
@@ -44,11 +50,13 @@ function writeUsers(users) {
         console.error('Error writing users.json:', error);
     }
 }
+
 function readAllTimetables() {
     try {
         const data = fs.readFileSync(timetablePath, 'utf8');
         return JSON.parse(data);
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Error reading timetable.json:', error);
         return {};
     }
@@ -60,22 +68,58 @@ function writeAllTimetables(allTimetables) {
         console.error('Error writing timetable.json:', error);
     }
 }
-function getDefaultTimetable() {
-    return {
-        monday: Array(8).fill(''),
-        tuesday: Array(8).fill(''),
-        wednesday: Array(8).fill(''),
-        thursday: Array(8).fill(''),
-        friday: Array(8).fill(''),
-        saturday: Array(8).fill('')
-    };
+
+function readAdjustments() {
+    try {
+        const data = fs.readFileSync(adjustmentsPath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading adjustments.json:', error);
+        return [];
+    }
 }
+
+function writeAdjustments(adjustments) {
+    try {
+        fs.writeFileSync(adjustmentsPath, JSON.stringify(adjustments, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing adjustments.json:', error);
+    }
+}
+
+
+// Helper to get a default empty timetable for a new teacher
+// Now returns an array of nulls for each period, to store lecture objects
+function getDefaultTimetable() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const defaultTimetable = {};
+    days.forEach(day => {
+        defaultTimetable[day] = Array(8).fill(null); // 8 periods, initially null
+    });
+    return defaultTimetable;
+}
+
+// Helper function to escape string for JavaScript literal (MOVED HERE)
+function escapeJsString(str) {
+    return str.replace(/\\/g, '\\\\') // Escape backslashes
+              .replace(/'/g, '\\\'')  // Escape single quotes
+              .replace(/"/g, '\\\"')  // Escape double quotes
+              .replace(/\n/g, '\\n')  // Escape newlines
+              .replace(/\r/g, '\\r')  // Escape carriage returns
+              .replace(/\t/g, '\\t')  // Escape tabs
+              .replace(/<\/script>/g, '<\\/script>'); // Escape </script>
+}
+
+
+// --- Routes ---
+
 app.get('/', (req, res) => {
     if (req.session.user) {
         return res.redirect(req.session.user.role === 'admin' ? '/admin' : '/timetable');
     }
     res.render('signup');
 });
+
 app.post('/signup', upload.single('profilePic'), (req, res) => {
     const { name, email, password, role } = req.body;
     if (!req.file) {
@@ -88,6 +132,7 @@ app.post('/signup', upload.single('profilePic'), (req, res) => {
     }
     users.push({ name, email, password, role, profilePic });
     writeUsers(users);
+
     if (role === 'teacher') {
         const allTimetables = readAllTimetables();
         allTimetables[email] = getDefaultTimetable();
@@ -95,12 +140,14 @@ app.post('/signup', upload.single('profilePic'), (req, res) => {
     }
     res.redirect('/login');
 });
+
 app.get('/login', (req, res) => {
     if (req.session.user) {
         return res.redirect(req.session.user.role === 'admin' ? '/admin' : '/timetable');
     }
     res.render('login');
 });
+
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
     const users = readUsers();
@@ -111,6 +158,7 @@ app.post('/login', (req, res) => {
     req.session.user = user;
     res.redirect(user.role === 'admin' ? '/admin' : '/timetable');
 });
+
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -121,6 +169,8 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
+// --- Admin Routes ---
 app.get('/admin', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.redirect('/login');
@@ -128,39 +178,191 @@ app.get('/admin', (req, res) => {
     const users = readUsers();
     const teachers = users.filter(u => u.role === 'teacher');
     const allTimetables = readAllTimetables();
-    const initialTimetable = getDefaultTimetable();
+    const initialTimetable = getDefaultTimetable(); // Default empty timetable for display
     res.render('admin', {
         user: req.session.user,
         teachers,
         allTimetables: allTimetables,
-        timetable: initialTimetable
+        timetable: initialTimetable, // This will be replaced by client-side logic
+        escapeJsString: escapeJsString // Pass the helper function to the EJS template
     });
 });
-app.post('/admin/timetable', (req, res) => {
+
+// ADMIN API: Add/Update a single lecture for a teacher
+app.post('/api/lectures', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.redirect('/login');
+        return res.status(403).json({ message: 'Unauthorized' });
     }
-    const { selectedTeacherEmail } = req.body;
-    if (!selectedTeacherEmail) {
-        return res.send('No teacher selected for timetable update.');
+
+    const { teacherEmail, day, periodIndex, subject, room, startTime, endTime, lectureId } = req.body;
+
+    if (!teacherEmail || !day || periodIndex === undefined || !subject || !room || !startTime || !endTime) {
+        return res.status(400).json({ message: 'Missing required lecture fields.' });
     }
+
     const allTimetables = readAllTimetables();
-    const updatedTimetableForTeacher = {};
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    for (const day of days) {
-        const value = req.body[day];
-        if (Array.isArray(value)) {
-            updatedTimetableForTeacher[day] = value.map(item => item.trim());
-        } else if (typeof value === 'string') {
-            updatedTimetableForTeacher[day] = value.split(',').map(item => item.trim());
-        } else {
-            updatedTimetableForTeacher[day] = [];
+    if (!allTimetables[teacherEmail]) {
+        allTimetables[teacherEmail] = getDefaultTimetable();
+    }
+
+    const teacherTimetable = allTimetables[teacherEmail];
+
+    // Validate periodIndex
+    if (periodIndex < 0 || periodIndex >= 8) {
+        return res.status(400).json({ message: 'Invalid period index.' });
+    }
+
+    const newLecture = {
+        id: lectureId || uuidv4(), // Use existing ID if provided (for update), otherwise generate new
+        subject,
+        room,
+        startTime,
+        endTime
+    };
+
+    teacherTimetable[day][periodIndex] = newLecture;
+    writeAllTimetables(allTimetables);
+
+    res.status(200).json({ message: 'Lecture saved successfully', lecture: newLecture });
+});
+
+// ADMIN API: Delete a single lecture for a teacher
+app.delete('/api/lectures/:teacherEmail/:day/:periodId', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const { teacherEmail, day, periodId } = req.params;
+
+    const allTimetables = readAllTimetables();
+    const teacherTimetable = allTimetables[teacherEmail];
+
+    if (!teacherTimetable || !teacherTimetable[day]) {
+        return res.status(404).json({ message: 'Teacher or day not found in timetable.' });
+    }
+
+    let found = false;
+    for (let i = 0; i < teacherTimetable[day].length; i++) {
+        if (teacherTimetable[day][i] && teacherTimetable[day][i].id === periodId) {
+            teacherTimetable[day][i] = null; // Set the slot to null
+            found = true;
+            break;
         }
     }
-    allTimetables[selectedTeacherEmail] = updatedTimetableForTeacher;
+
+    if (!found) {
+        return res.status(404).json({ message: 'Lecture not found.' });
+    }
+
     writeAllTimetables(allTimetables);
+    res.status(200).json({ message: 'Lecture deleted successfully.' });
+});
+
+
+// Teacher Leave Request API
+app.post('/api/leave-request', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'teacher') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const { leaveDate, reason } = req.body;
+    const teacherEmail = req.session.user.email;
+    const teacherName = req.session.user.name;
+
+    if (!leaveDate || !reason) {
+        return res.status(400).json({ message: 'Leave date and reason are required.' });
+    }
+
+    const allTimetables = readAllTimetables();
+    const teacherTimetable = allTimetables[teacherEmail];
+
+    if (!teacherTimetable) {
+        return res.status(404).json({ message: 'Teacher timetable not found.' });
+    }
+
+    const leaveDayOfWeek = new Date(leaveDate).toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+
+    const lecturesOnLeaveDay = [];
+    if (teacherTimetable[leaveDayOfWeek]) {
+        teacherTimetable[leaveDayOfWeek].forEach((lecture, index) => {
+            if (lecture) {
+                lecturesOnLeaveDay.push({
+                    periodIndex: index,
+                    subject: lecture.subject,
+                    room: lecture.room,
+                    startTime: lecture.startTime,
+                    endTime: lecture.endTime
+                });
+            }
+        });
+    }
+
+    const adjustments = readAdjustments();
+    const newAdjustmentRequest = {
+        id: uuidv4(),
+        teacherEmail,
+        teacherName,
+        leaveDate,
+        reason,
+        lectures: lecturesOnLeaveDay,
+        status: 'Pending Admin Action', // Initial status
+        substituteTeacher: null,
+        createdAt: new Date().toISOString()
+    };
+
+    adjustments.push(newAdjustmentRequest);
+    writeAdjustments(adjustments);
+
+    res.status(200).json({ message: 'Leave request submitted and adjustments created.', adjustment: newAdjustmentRequest });
+});
+
+// Admin API: Fetch pending adjustment requests
+app.get('/api/adjustments/pending', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const adjustments = readAdjustments();
+    const pendingAdjustments = adjustments.filter(adj => adj.status === 'Pending Admin Action');
+    res.status(200).json(pendingAdjustments);
+});
+
+// Admin API: Update an adjustment request (assign substitute / mark resolved)
+app.post('/api/adjustments/update', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const { adjustmentId, status, substituteTeacher } = req.body;
+
+    if (!adjustmentId || !status) {
+        return res.status(400).json({ message: 'Adjustment ID and status are required.' });
+    }
+
+    const adjustments = readAdjustments();
+    const adjustmentIndex = adjustments.findIndex(adj => adj.id === adjustmentId);
+
+    if (adjustmentIndex === -1) {
+        return res.status(404).json({ message: 'Adjustment request not found.' });
+    }
+
+    adjustments[adjustmentIndex].status = status;
+    if (substituteTeacher) {
+        adjustments[adjustmentIndex].substituteTeacher = substituteTeacher;
+    }
+    adjustments[adjustmentIndex].updatedAt = new Date().toISOString();
+
+    writeAdjustments(adjustments);
+    res.status(200).json({ message: 'Adjustment request updated successfully.', adjustment: adjustments[adjustmentIndex] });
+});
+
+
+// --- Frontend Render Routes (unchanged for now, will be updated in later phases) ---
+app.post('/admin/timetable', (req, res) => {
+    // This route will be deprecated or repurposed as lecture updates will happen via API
+    // For now, it will just redirect.
     res.redirect('/admin');
 });
+
 app.get('/timetable', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'teacher') {
         return res.redirect('/login');
@@ -171,6 +373,8 @@ app.get('/timetable', (req, res) => {
 
     res.render('timetable', { user: req.session.user, timetable: teacherTimetable });
 });
+
+
 app.listen(PORT, () => {
     console.log(`Server running at port : ${PORT}`);
 });

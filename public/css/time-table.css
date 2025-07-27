@@ -48,12 +48,12 @@ body {
 .sidebar-menu a {
     display: block;
     padding: 12px 15px;
-    color: #333; /* Dark text color */
+    color: #333 !important; /* Dark text color, forced */
     text-decoration: none;
     border-radius: 5px;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: 1em;
-    background-color: #ecf0f1; /* Light background color */
+    background-color: #ecf0f1 !important; /* Light background color, forced */
     border: none;
     width: 100%;
     text-align: left;
@@ -62,8 +62,8 @@ body {
 }
 
 .sidebar-menu a:hover {
-    background-color: #3498db; /* Blue background on hover */
-    color: white; /* White text on hover */
+    background-color: #3498db !important; /* Blue background on hover, forced */
+    color: white !important; /* White text on hover, forced */
 }
 
 /* Existing sidebar button styling (Meeting, Scheduling, Upcoming Event) */
@@ -89,13 +89,13 @@ body {
 
 /* Specific styling for Meeting and Scheduling buttons if they need distinct initial colors */
 .sidebar-menu li .sidebar-button {
-    background-color: #ecf0f1; /* Light background for Meeting/Scheduling when not active */
-    color: #333; /* Dark text for Meeting/Scheduling when not active */
+    background-color: #ecf0f1 !important; /* Light background for Meeting/Scheduling when not active */
+    color: #333 !important; /* Dark text for Meeting/Scheduling when not active */
 }
 
 .sidebar-menu li .sidebar-button:hover {
-    background-color: #3498db; /* Blue background on hover */
-    color: white; /* White text on hover */
+    background-color: #3498db !important; /* Blue background on hover */
+    color: white !important; /* White text on hover */
 }
 
 .sidebar-menu i {
