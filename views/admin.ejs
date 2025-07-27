@@ -4,6 +4,8 @@
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
 </head>
 <body>
     <div class="main-container">
@@ -14,8 +16,8 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="#"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
-                <li><a href="#"><i class="fas fa-user-check"></i> Approve/Leave</a></li>
+                <li><a href="#calendar-section" class="scroll-link"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
+                <li><a href="#adjustments-section" class="scroll-link"><i class="fas fa-user-check"></i> Approve/Leave</a></li>
                 <li><a href="#"><i class="fas fa-inbox"></i> Inbox</a></li>
             </ul>
             <div class="sidebar-section-title">Current View</div>
@@ -50,125 +52,105 @@
                     </select>
                 </div>
 
-                <div class="timetable-section">
-                    <h3>Time Table</h3>
-                    <form id="timetableForm" action="/admin/timetable" method="POST">
-                        <input type="hidden" name="selectedTeacherEmail" id="selectedTeacherEmail" value="" />
-                        <table class="timetable-table">
-                            <thead>
-                                <tr>
-                                    <th>Days/Time</th>
-                                    <% for (let i = 1; i <= 8; i++) { %>
-                                        <th>Period <%= i %></th>
-                                    <% } %>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']; %>
-                                <% days.forEach(day => { %>
-                                    <tr>
-                                        <td class="day-header"><%= day.charAt(0).toUpperCase() + day.slice(1) %></td>
-                                        <% for (let i = 0; i < 8; i++) { %>
-                                            <td>
-                                                <input type="text" name="<%= day %>[]" id="<%= day %>_period_<%= i %>" value="" />
-                                            </td>
-                                        <% } %>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-                        <button type="submit" class="update-button">Update Timetable</button>
-                    </form>
+                
+
+                <div class="timetable-section" id="calendar-section">
+                    <h3>Teacher Timetable</h3>
+                    <div id='calendar'></div>
+                    <button class="add-lecture-button" id="addLectureButton" style="display: none;">Add New Lecture</button>
                 </div>
 
-                <div id="teacherDetails" class="teacher-details-display" style="display: none;">
-                    <h4>Selected Teacher Details:</h4>
-                    <p><strong>Name:</strong> <span id="detailName"></span></p>
-                    <p><strong>Email:</strong> <span id="detailEmail"></span></p>
-                    <p><strong>Role:</strong> <span id="detailRole"></span></p>
-                    <div style="text-align: center;">
-                        <img id="detailProfilePic" src="" alt="Profile Pic" class="detail-profile-pic" />
+                <!-- Lecture Input Modal -->
+                <div id="lectureModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-button">&times;</span>
+                        <h4>Add/Edit Lecture</h4>
+                        <form id="lectureForm">
+                            <input type="hidden" id="modalLectureId" />
+                            <input type="hidden" id="modalTeacherEmail" />
+                            <input type="hidden" id="modalDay" />
+                            <input type="hidden" id="modalPeriodIndex" />
+
+                            <label for="subject">Subject:</label>
+                            <input type="text" id="subject" required />
+
+                            <label for="room">Room No.:</label>
+                            <input type="text" id="room" required />
+
+                            <label for="startTime">Start Time:</label>
+                            <input type="time" id="startTime" required />
+
+                            <label for="endTime">End Time:</label>
+                            <input type="time" id="endTime" required />
+
+                            <button type="submit" id="saveLectureButton">Save Lecture</button>
+                            <button type="button" id="deleteLectureButton" class="delete-button" style="display:none;">Delete Lecture</button>
+                        </form>
                     </div>
                 </div>
+
+                <!-- Adjustment Requests Section -->
+                <div class="adjustments-section" id="adjustments-section">
+                    <h3>Pending Leave Adjustment Requests</h3>
+                    <div id="adjustmentRequestsList">
+                        <!-- Adjustment requests will be loaded here by JavaScript -->
+                        <p id="noAdjustmentsMessage">No pending adjustment requests.</p>
+                    </div>
+                </div>
+
+                 <!-- Adjustment Details Modal -->
+                <div id="adjustmentModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-button">&times;</span>
+                        <h4>Adjustment Request Details</h4>
+                        <div id="adjustmentDetailsContent">
+                            <p><strong>Teacher:</strong> <span id="adjTeacherName"></span> (<span id="adjTeacherEmail"></span>)</p>
+                            <p><strong>Leave Date:</strong> <span id="adjLeaveDate"></span></p>
+                            <p><strong>Reason:</strong> <span id="adjReason"></span></p>
+                            <p><strong>Lectures Affected:</strong></p>
+                            <ul id="adjLecturesAffected"></ul>
+                            <p><strong>Current Status:</strong> <span id="adjStatus"></span></p>
+                            <p><strong>Substitute Teacher:</strong> <span id="adjSubstitute"></span></p>
+                        </div>
+                        <form id="adjustmentActionForm">
+                            <input type="hidden" id="adjRequestId" />
+                            <label for="adjStatusSelect">Update Status:</label>
+                            <select id="adjStatusSelect">
+                                <option value="Pending Admin Action">Pending Admin Action</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                            <label for="substituteTeacher">Assign Substitute (Email):</label>
+                            <input type="email" id="substituteTeacher" placeholder="Enter substitute teacher's email" />
+                            <button type="submit">Update Adjustment</button>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js'></script>
+
     <script>
-        // Helper function to escape string for JavaScript literal
-        // Assuming you have an escapeString function defined somewhere, for example:
-function escapeString(str) {
-    if (typeof str !== 'string') {
-        return str; // Or handle non-string types as needed
-    }
-    return str
-        .replace(/\\/g, '\\\\') // Escape backslashes first
-        .replace(/'/g, "\\'")   // Escape single quotes
-        .replace(/"/g, '\\"')   // Escape double quotes
-        .replace(/\n/g, '\\n')  // Escape newlines
-        .replace(/\r/g, '\\r')  // Escape carriage returns
-        .replace(/\t/g, '\\t'); // Escape tabs
-}
-
-// When rendering your EJS template:
-app.get('/admin', (req, res) => {
-    // ... (fetch allTimetables and teachers data) ...
-
-    res.render('admin', {
-        allTimetables: allTimetables,
-        teachers: teachers, 
-        escapeString: escapeString     });
-});
+        // EJS variables passed from the server
         const allTimetables = JSON.parse('<%- escapeJsString(JSON.stringify(allTimetables)) %>');
         const teachersData = JSON.parse('<%- escapeJsString(JSON.stringify(teachers)) %>');
-        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const initialAdjustments = JSON.parse('<%- escapeJsString(JSON.stringify(adjustments)) %>');
 
-        function populateTimetable(timetable) {
-            days.forEach(day => {
-                for (let i = 0; i < 8; i++) {
-                    const input = document.getElementById(`${day}_period_${i}`);
-                    if (input) input.value = (timetable && timetable[day] && timetable[day][i]) ? timetable[day][i] : '';
-                }
-            });
-        }
+        const daysMap = {
+            'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6, 'sunday': 0
+        };
+        const reverseDaysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-        function clearTimetable() {
-            days.forEach(day => {
-                for (let i = 0; i < 8; i++) {
-                    const input = document.getElementById(`${day}_period_${i}`);
-                    if (input) input.value = '';
-                }
-            });
-        }
+        let calendar; // FullCalendar instance
+        let currentSelectedTeacherEmail = '';
 
-        document.getElementById('teacherSelect').addEventListener('change', function() {
-            const selectedEmail = this.value;
-            const teacherDetailsDiv = document.getElementById('teacherDetails');
-            const selectedTeacherEmailInput = document.getElementById('selectedTeacherEmail');
-            selectedTeacherEmailInput.value = selectedEmail;
-
-            if (selectedEmail) {
-                const selectedTeacher = teachersData.find(t => t.email === selectedEmail);
-
-                if (selectedTeacher) {
-                    document.getElementById('detailName').textContent = selectedTeacher.name;
-                    document.getElementById('detailEmail').textContent = selectedTeacher.email;
-                    document.getElementById('detailRole').textContent = selectedTeacher.role;
-                    document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
-                    teacherDetailsDiv.style.display = 'block';
-
-                    const teacherTimetable = allTimetables[selectedEmail] || {};
-                    populateTimetable(teacherTimetable);
-                } else {
-                    teacherDetailsDiv.style.display = 'none';
-                    clearTimetable();
-                }
-            } else {
-                teacherDetailsDiv.style.display = 'none';
-                clearTimetable();
-            }
-        });
-
+        // Function to update live time and date
         function updateLiveTime() {
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
@@ -178,8 +160,442 @@ app.get('/admin', (req, res) => {
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
 
+        // Helper to format lecture data for FullCalendar
+        function formatLecturesForCalendar(timetable, teacherEmail) {
+            const events = [];
+            for (const day in timetable) {
+                if (timetable.hasOwnProperty(day)) {
+                    timetable[day].forEach((lecture, index) => {
+                        if (lecture) {
+                            // FullCalendar needs a date, so we'll use a dummy date for recurring events
+                            // and rely on `daysOfWeek` for weekly recurrence.
+                            // For simplicity, we'll use the current week's dates for display.
+                            // A real implementation might use a specific start date for the timetable.
+                            const today = new Date();
+                            const dayIndex = daysMap[day];
+                            if (dayIndex === undefined) return; // Skip if day is not recognized
+
+                            const dayDiff = dayIndex - today.getDay();
+                            const eventDate = new Date(today);
+                            eventDate.setDate(today.getDate() + dayDiff);
+
+                            // Format start and end times
+                            const startDateTime = `${eventDate.toISOString().slice(0, 10)}T${lecture.startTime}`;
+                            const endDateTime = `${eventDate.toISOString().slice(0, 10)}T${lecture.endTime}`;
+
+
+                            events.push({
+                                id: lecture.id,
+                                title: `${lecture.subject} (${lecture.room})`,
+                                start: startDateTime,
+                                end: endDateTime,
+                                // FullCalendar's `daysOfWeek` property is for recurring events
+                                // For a static timetable, we'll just set the date directly.
+                                // If we want true weekly recurrence, we'd set `daysOfWeek: [dayIndex]`
+                                // and a generic time, but that complicates editing individual instances.
+                                // For now, we'll treat each as a distinct event on a specific date.
+                                // To make it recurring, we would use:
+                                // daysOfWeek: [dayIndex],
+                                // startTime: lecture.startTime,
+                                // endTime: lecture.endTime,
+                                // But then we can't easily edit/delete individual instances.
+                                // For this use case, we'll generate events for the current week or a fixed range.
+                                // Let's simplify and just display the current week's timetable.
+                                // For editing, we'll map back to day and periodIndex.
+                                extendedProps: {
+                                    teacherEmail: teacherEmail,
+                                    day: day, // Store original day string
+                                    periodIndex: index,
+                                    subject: lecture.subject,
+                                    room: lecture.room
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+            return events;
+        }
+
+        // Initialize FullCalendar
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek', // Display a weekly view
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '08:00:00', // Start time for the calendar grid
+                slotMaxTime: '18:00:00', // End time for the calendar grid
+                editable: true, // Allow dragging and resizing events
+                selectable: true, // Allow selecting time slots
+                allDaySlot: false, // Hide the all-day slot
+                eventClick: function(info) {
+                    // Handle event click (edit lecture)
+                    showLectureModal(info.event);
+                },
+                select: function(info) {
+                    // Handle time slot selection (add new lecture)
+                    const selectedDate = info.start;
+                    const dayOfWeek = reverseDaysMap[selectedDate.getDay()];
+                    const startTime = selectedDate.toTimeString().slice(0, 5);
+                    const endTime = info.end.toTimeString().slice(0, 5);
+
+                    // Determine period index based on time (simplified, you might need a more robust logic)
+                    // For now, we'll just pass the day and let the form handle time.
+                    // The periodIndex will be determined when saving based on the actual time.
+                    showLectureModal(null, dayOfWeek, startTime, endTime);
+                },
+                events: [] // Initial empty events, will be populated on teacher selection
+            });
+            calendar.render();
+        });
+
+
+        // Populate calendar with selected teacher's timetable
+        function populateCalendar(teacherTimetable, teacherEmail) {
+            const events = formatLecturesForCalendar(teacherTimetable, teacherEmail);
+            calendar.removeAllEvents(); // Clear existing events
+            calendar.addEventSource(events); // Add new events
+            calendar.refetchEvents(); // Redraw calendar
+        }
+
+        // Clear calendar
+        function clearCalendar() {
+            calendar.removeAllEvents();
+            calendar.refetchEvents();
+        }
+
+        // Teacher selection logic
+        document.getElementById('teacherSelect').addEventListener('change', function() {
+            currentSelectedTeacherEmail = this.value;
+            const teacherDetailsDiv = document.getElementById('teacherDetails');
+            const addLectureButton = document.getElementById('addLectureButton');
+
+            if (currentSelectedTeacherEmail) {
+                const selectedTeacher = teachersData.find(t => t.email === currentSelectedTeacherEmail);
+
+                if (selectedTeacher) {
+                    document.getElementById('detailName').textContent = selectedTeacher.name;
+                    document.getElementById('detailEmail').textContent = selectedTeacher.email;
+                    document.getElementById('detailRole').textContent = selectedTeacher.role;
+                    document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
+                    teacherDetailsDiv.style.display = 'block';
+                    addLectureButton.style.display = 'block';
+
+                    const teacherTimetable = allTimetables[currentSelectedTeacherEmail] || {};
+                    populateCalendar(teacherTimetable, currentSelectedTeacherEmail);
+                } else {
+                    teacherDetailsDiv.style.display = 'none';
+                    addLectureButton.style.display = 'none';
+                    clearCalendar();
+                }
+            } else {
+                teacherDetailsDiv.style.display = 'none';
+                addLectureButton.style.display = 'none';
+                clearCalendar();
+            }
+        });
+
+        // Lecture Modal Logic
+        const lectureModal = document.getElementById('lectureModal');
+        const closeButton = lectureModal.querySelector('.close-button');
+        const lectureForm = document.getElementById('lectureForm');
+        const saveLectureButton = document.getElementById('saveLectureButton');
+        const deleteLectureButton = document.getElementById('deleteLectureButton');
+
+        function showLectureModal(event = null, day = null, startTime = null, endTime = null) {
+            // Reset form
+            lectureForm.reset();
+            document.getElementById('modalLectureId').value = '';
+            deleteLectureButton.style.display = 'none'; // Hide delete button by default
+
+            document.getElementById('modalTeacherEmail').value = currentSelectedTeacherEmail;
+
+            if (event) { // Editing existing event
+                document.getElementById('modalLectureId').value = event.id;
+                document.getElementById('subject').value = event.extendedProps.subject;
+                document.getElementById('room').value = event.extendedProps.room;
+                document.getElementById('startTime').value = event.start.toTimeString().slice(0, 5);
+                document.getElementById('endTime').value = event.end.toTimeString().slice(0, 5);
+                document.getElementById('modalDay').value = event.extendedProps.day;
+                document.getElementById('modalPeriodIndex').value = event.extendedProps.periodIndex;
+                deleteLectureButton.style.display = 'block'; // Show delete button for existing events
+            } else { // Adding new event
+                document.getElementById('modalDay').value = day;
+                document.getElementById('startTime').value = startTime;
+                document.getElementById('endTime').value = endTime;
+            }
+            lectureModal.style.display = 'block';
+        }
+
+        closeButton.onclick = function() {
+            lectureModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == lectureModal) {
+                lectureModal.style.display = 'none';
+            }
+        }
+
+        document.getElementById('addLectureButton').addEventListener('click', () => {
+            if (currentSelectedTeacherEmail) {
+                showLectureModal(); // Open modal for adding new lecture
+            } else {
+                alert('Please select a teacher first.');
+            }
+        });
+
+        lectureForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const lectureId = document.getElementById('modalLectureId').value;
+            const teacherEmail = document.getElementById('modalTeacherEmail').value;
+            const subject = document.getElementById('subject').value;
+            const room = document.getElementById('room').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            let day = document.getElementById('modalDay').value;
+            let periodIndex = document.getElementById('modalPeriodIndex').value;
+
+            // Determine day and periodIndex based on selected time if not already set (for new events)
+            if (!day || periodIndex === '') {
+                const tempDate = new Date(); // Use a dummy date for time comparison
+                const startHour = parseInt(startTime.split(':')[0]);
+                const endHour = parseInt(endTime.split(':')[0]);
+
+                // Simple logic to map time to period index (adjust as needed for your periods)
+                // This is a basic example, you might need a more sophisticated mapping
+                // For now, let's just assign based on a simple hourly slot
+                periodIndex = Math.floor((startHour - 8)); // Assuming period 0 starts at 8 AM
+
+                // For new events, we need to pick a day. For simplicity, let's use Monday for now
+                // In a real calendar, this would come from the FullCalendar `select` callback
+                day = reverseDaysMap[1]; // Monday
+            }
+
+            const payload = {
+                teacherEmail,
+                day,
+                periodIndex: parseInt(periodIndex),
+                subject,
+                room,
+                startTime,
+                endTime,
+                lectureId: lectureId || undefined // Only send ID if it exists (for update)
+            };
+
+            try {
+                const response = await fetch('/api/lectures', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    lectureModal.style.display = 'none';
+                    // Update the allTimetables object and re-render calendar
+                    if (!allTimetables[teacherEmail]) {
+                        allTimetables[teacherEmail] = getDefaultTimetable();
+                    }
+                    allTimetables[teacherEmail][day][parseInt(periodIndex)] = result.lecture;
+                    populateCalendar(allTimetables[teacherEmail], teacherEmail);
+                } else {
+                    alert('Error saving lecture: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while saving the lecture.');
+            }
+        });
+
+        deleteLectureButton.addEventListener('click', async function() {
+            const lectureId = document.getElementById('modalLectureId').value;
+            const teacherEmail = document.getElementById('modalTeacherEmail').value;
+            const day = document.getElementById('modalDay').value;
+            const periodIndex = document.getElementById('modalPeriodIndex').value;
+
+            if (!confirm('Are you sure you want to delete this lecture?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/lectures/${teacherEmail}/${day}/${lectureId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    lectureModal.style.display = 'none';
+                    // Remove the lecture from allTimetables and re-render calendar
+                    if (allTimetables[teacherEmail] && allTimetables[teacherEmail][day]) {
+                        // Find the index of the lecture to delete based on ID
+                        const indexToDelete = allTimetables[teacherEmail][day].findIndex(lec => lec && lec.id === lectureId);
+                        if (indexToDelete !== -1) {
+                            allTimetables[teacherEmail][day][indexToDelete] = null;
+                        }
+                    }
+                    populateCalendar(allTimetables[teacherEmail], teacherEmail);
+                } else {
+                    alert('Error deleting lecture: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the lecture.');
+            }
+        });
+
+
+        // Adjustment Requests Dashboard Logic
+        const adjustmentRequestsList = document.getElementById('adjustmentRequestsList');
+        const noAdjustmentsMessage = document.getElementById('noAdjustmentsMessage');
+        const adjustmentModal = document.getElementById('adjustmentModal');
+        const adjustmentCloseButton = adjustmentModal.querySelector('.close-button');
+        const adjustmentActionForm = document.getElementById('adjustmentActionForm');
+
+        function renderAdjustmentRequests(adjustments) {
+            adjustmentRequestsList.innerHTML = ''; // Clear previous list
+            if (adjustments.length === 0) {
+                noAdjustmentsMessage.style.display = 'block';
+                return;
+            }
+            noAdjustmentsMessage.style.display = 'none';
+
+            adjustments.forEach(adj => {
+                const adjDiv = document.createElement('div');
+                adjDiv.classList.add('adjustment-request-item');
+                adjDiv.innerHTML = `
+                    <p><strong>Teacher:</strong> ${adj.teacherName} (${adj.teacherEmail})</p>
+                    <p><strong>Leave Date:</strong> ${new Date(adj.leaveDate).toLocaleDateString()}</p>
+                    <p><strong>Reason:</strong> ${adj.reason}</p>
+                    <p><strong>Status:</strong> <span class="status-${adj.status.replace(/\s/g, '-').toLowerCase()}">${adj.status}</span></p>
+                    <button class="view-details-button" data-id="${adj.id}">View Details</button>
+                `;
+                adjustmentRequestsList.appendChild(adjDiv);
+            });
+
+            // Add event listeners for "View Details" buttons
+            document.querySelectorAll('.view-details-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const adjustmentId = this.dataset.id;
+                    const selectedAdjustment = initialAdjustments.find(adj => adj.id === adjustmentId);
+                    if (selectedAdjustment) {
+                        showAdjustmentModal(selectedAdjustment);
+                    }
+                });
+            });
+        }
+
+        function showAdjustmentModal(adjustment) {
+            document.getElementById('adjRequestId').value = adjustment.id;
+            document.getElementById('adjTeacherName').textContent = adjustment.teacherName;
+            document.getElementById('adjTeacherEmail').textContent = adjustment.teacherEmail;
+            document.getElementById('adjLeaveDate').textContent = new Date(adjustment.leaveDate).toLocaleDateString();
+            document.getElementById('adjReason').textContent = adjustment.reason;
+
+            const lecturesAffectedList = document.getElementById('adjLecturesAffected');
+            lecturesAffectedList.innerHTML = '';
+            if (adjustment.lectures && adjustment.lectures.length > 0) {
+                adjustment.lectures.forEach(lec => {
+                    const li = document.createElement('li');
+                    li.textContent = `Period ${lec.periodIndex + 1}: ${lec.subject} in ${lec.room} (${lec.startTime} - ${lec.endTime})`;
+                    lecturesAffectedList.appendChild(li);
+                });
+            } else {
+                lecturesAffectedList.innerHTML = '<li>No lectures affected or details not provided.</li>';
+            }
+
+            document.getElementById('adjStatus').textContent = adjustment.status;
+            document.getElementById('adjStatusSelect').value = adjustment.status;
+            document.getElementById('adjSubstitute').textContent = adjustment.substituteTeacher || 'N/A';
+            document.getElementById('substituteTeacher').value = adjustment.substituteTeacher || '';
+
+            adjustmentModal.style.display = 'block';
+        }
+
+        adjustmentCloseButton.onclick = function() {
+            adjustmentModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == adjustmentModal) {
+                adjustmentModal.style.display = 'none';
+            }
+        }
+
+        adjustmentActionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const adjustmentId = document.getElementById('adjRequestId').value;
+            const status = document.getElementById('adjStatusSelect').value;
+            const substituteTeacher = document.getElementById('substituteTeacher').value;
+
+            const payload = {
+                adjustmentId,
+                status,
+                substituteTeacher: substituteTeacher || null // Send null if empty
+            };
+
+            try {
+                const response = await fetch('/api/adjustments/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    adjustmentModal.style.display = 'none';
+                    // Update the local adjustments array and re-render
+                    const updatedAdjIndex = initialAdjustments.findIndex(adj => adj.id === adjustmentId);
+                    if (updatedAdjIndex !== -1) {
+                        initialAdjustments[updatedAdjIndex] = result.adjustment;
+                    }
+                    renderAdjustmentRequests(initialAdjustments.filter(adj => adj.status === 'Pending Admin Action')); // Re-render only pending
+                } else {
+                    alert('Error updating adjustment: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating the adjustment.');
+            }
+        });
+
+        // Initial render of adjustment requests
+        renderAdjustmentRequests(initialAdjustments.filter(adj => adj.status === 'Pending Admin Action'));
+
+
+        // Update time immediately and then every second
         updateLiveTime();
         setInterval(updateLiveTime, 1000);
+
+         // Smooth scrolling for sidebar links
+        document.querySelectorAll('.sidebar-menu .scroll-link').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Helper to get a default empty timetable for a new teacher (client-side)
+        function getDefaultTimetable() {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const defaultTimetable = {};
+            days.forEach(day => {
+                defaultTimetable[day] = Array(8).fill(null); // 8 periods, initially null
+            });
+            return defaultTimetable;
+        }
+
     </script>
 </body>
 </html>

@@ -1,0 +1,41 @@
+[
+  {
+    "id": "34f39fb9-2288-4b47-83c1-ae78fa9a4929",
+    "teacherEmail": "narendramodi123@codeqoutient.com",
+    "teacherName": "modi",
+    "leaveDate": "2025-07-28",
+    "reason": "ni aata mai meri marzi",
+    "lectures": [
+      {
+        "periodIndex": 1,
+        "subject": "english",
+        "room": "12",
+        "startTime": "09:00",
+        "endTime": "10:00",
+        "lectureId": "4db07e11-d3d6-4072-aa2b-2f0b1b063b49"
+      },
+      {
+        "periodIndex": 2
+      },
+      {
+        "periodIndex": 3
+      },
+      {
+        "periodIndex": 4
+      },
+      {
+        "periodIndex": 5
+      },
+      {
+        "periodIndex": 6
+      },
+      {
+        "periodIndex": 7
+      }
+    ],
+    "status": "Approved",
+    "substituteTeacher": "gvbg7689@gmail.com",
+    "createdAt": "2025-07-27T07:41:10.986Z",
+    "updatedAt": "2025-07-27T07:42:14.763Z"
+  }
+]

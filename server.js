@@ -32,6 +32,7 @@ const upload = multer({ storage });
 const userDataPath = path.join(__dirname, 'data', 'users.json');
 const timetablePath = path.join(__dirname, 'data', 'timetable.json');
 const adjustmentsPath = path.join(__dirname, 'data', 'adjustments.json'); // New path for adjustments
+const messagesPath = path.join(__dirname, 'data', 'messages.json'); // New path for messages
 
 // Helper functions for reading/writing JSON files
 function readUsers() {
@@ -84,6 +85,24 @@ function writeAdjustments(adjustments) {
         fs.writeFileSync(adjustmentsPath, JSON.stringify(adjustments, null, 2), 'utf8');
     } catch (error) {
         console.error('Error writing adjustments.json:', error);
+    }
+}
+
+function readMessages() {
+    try {
+        const data = fs.readFileSync(messagesPath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading messages.json:', error);
+        return [];
+    }
+}
+
+function writeMessages(messages) {
+    try {
+        fs.writeFileSync(messagesPath, JSON.stringify(messages, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing messages.json:', error);
     }
 }
 
@@ -179,11 +198,17 @@ app.get('/admin', (req, res) => {
     const teachers = users.filter(u => u.role === 'teacher');
     const allTimetables = readAllTimetables();
     const initialTimetable = getDefaultTimetable(); // Default empty timetable for display
+    const adjustments = readAdjustments(); // Fetch adjustments for admin dashboard
+
+    // Filter out non-teacher users from the teachers list for the dropdown
+    const availableTeachers = users.filter(u => u.role === 'teacher');
+
     res.render('admin', {
         user: req.session.user,
-        teachers,
+        teachers: availableTeachers, // Pass filtered teachers
         allTimetables: allTimetables,
         timetable: initialTimetable, // This will be replaced by client-side logic
+        adjustments: adjustments, // Pass adjustments to the admin dashboard
         escapeJsString: escapeJsString // Pass the helper function to the EJS template
     });
 });
@@ -280,7 +305,10 @@ app.post('/api/leave-request', (req, res) => {
         return res.status(404).json({ message: 'Teacher timetable not found.' });
     }
 
-    const leaveDayOfWeek = new Date(leaveDate).toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+    // Convert leaveDate to a Date object to get the day of the week
+    const leaveDay = new Date(leaveDate);
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const leaveDayOfWeek = daysOfWeek[leaveDay.getDay()];
 
     const lecturesOnLeaveDay = [];
     if (teacherTimetable[leaveDayOfWeek]) {
@@ -291,7 +319,8 @@ app.post('/api/leave-request', (req, res) => {
                     subject: lecture.subject,
                     room: lecture.room,
                     startTime: lecture.startTime,
-                    endTime: lecture.endTime
+                    endTime: lecture.endTime,
+                    lectureId: lecture.id // Include lecture ID for potential future reference
                 });
             }
         });
@@ -355,6 +384,74 @@ app.post('/api/adjustments/update', (req, res) => {
     res.status(200).json({ message: 'Adjustment request updated successfully.', adjustment: adjustments[adjustmentIndex] });
 });
 
+// API: Send a message
+app.post('/api/messages', (req, res) => {
+    if (!req.session.user) {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const { recipient, subject, body } = req.body; // recipient can be an email or 'admin'
+    const senderEmail = req.session.user.email;
+    const senderName = req.session.user.name;
+    const senderRole = req.session.user.role;
+
+    if (!recipient || !subject || !body) {
+        return res.status(400).json({ message: 'Recipient, subject, and body are required.' });
+    }
+
+    const messages = readMessages();
+    const newMessage = {
+        id: uuidv4(),
+        senderEmail,
+        senderName,
+        senderRole,
+        recipient, // Can be a teacher's email or 'admin'
+        subject,
+        body,
+        timestamp: new Date().toISOString(),
+        read: false
+    };
+
+    messages.push(newMessage);
+    writeMessages(messages);
+
+    res.status(200).json({ message: 'Message sent successfully.', message: newMessage });
+});
+
+// API: Get messages for the current user
+app.get('/api/messages', (req, res) => {
+    if (!req.session.user) {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const currentUserEmail = req.session.user.email;
+    const currentUserRole = req.session.user.role;
+    const allMessages = readMessages();
+
+    let userMessages = [];
+
+    if (currentUserRole === 'admin') {
+        // Admin gets all messages where recipient is 'admin' OR sender is 'admin'
+        userMessages = allMessages.filter(msg =>
+            msg.recipient === 'admin' || msg.senderRole === 'admin'
+        );
+    } else if (currentUserRole === 'teacher') {
+        // Teacher gets messages where recipient is their email OR sender is 'admin' AND recipient is their email
+        // OR sender is their email AND recipient is 'admin'
+        userMessages = allMessages.filter(msg =>
+            (msg.recipient === currentUserEmail && msg.senderRole === 'admin') || // Admin to this teacher
+            (msg.senderEmail === currentUserEmail && msg.recipient === 'admin')    // This teacher to admin
+        );
+    } else {
+        return res.status(403).json({ message: 'Invalid user role.' });
+    }
+
+    // Sort messages by timestamp, newest first
+    userMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.status(200).json(userMessages);
+});
+
 
 // --- Frontend Render Routes (unchanged for now, will be updated in later phases) ---
 app.post('/admin/timetable', (req, res) => {
@@ -371,7 +468,11 @@ app.get('/timetable', (req, res) => {
     const allTimetables = readAllTimetables();
     const teacherTimetable = allTimetables[teacherEmail] || getDefaultTimetable();
 
-    res.render('timetable', { user: req.session.user, timetable: teacherTimetable });
+    res.render('timetable', {
+        user: req.session.user,
+        timetable: teacherTimetable,
+        escapeJsString: escapeJsString // Pass the helper function to the EJS template
+    });
 });
 
 
