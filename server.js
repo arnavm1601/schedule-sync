@@ -111,9 +111,10 @@ function writeMessages(messages) {
 // Now returns an array of nulls for each period, to store lecture objects
 function getDefaultTimetable() {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    // Changed from 8 to 7 periods
     const defaultTimetable = {};
     days.forEach(day => {
-        defaultTimetable[day] = Array(8).fill(null); // 8 periods, initially null
+        defaultTimetable[day] = Array(7).fill(null); // 7 periods, initially null
     });
     return defaultTimetable;
 }
@@ -232,8 +233,8 @@ app.post('/api/lectures', (req, res) => {
 
     const teacherTimetable = allTimetables[teacherEmail];
 
-    // Validate periodIndex
-    if (periodIndex < 0 || periodIndex >= 8) {
+    // Validate periodIndex (changed from 8 to 7)
+    if (periodIndex < 0 || periodIndex >= 7) {
         return res.status(400).json({ message: 'Invalid period index.' });
     }
 
@@ -519,3 +520,4 @@ app.get('/timetable', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running at port : ${PORT}`);
 });
+    

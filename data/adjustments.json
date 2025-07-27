@@ -37,5 +37,50 @@
     "substituteTeacher": "gvbg7689@gmail.com",
     "createdAt": "2025-07-27T07:41:10.986Z",
     "updatedAt": "2025-07-27T07:42:14.763Z"
+  },
+  {
+    "id": "1dd80589-2aac-4ebc-9b5a-5c45d0928410",
+    "teacherEmail": "gvbg7689@gmail.com",
+    "teacherName": "gvbg",
+    "leaveDate": "2025-07-28",
+    "reason": "shimla ja rha hu kl",
+    "lectures": [
+      {
+        "periodIndex": 0,
+        "subject": "Mathematics I",
+        "room": "Rm 201",
+        "startTime": "08:00",
+        "endTime": "09:00",
+        "lectureId": "gvbg-mon-p1-0728"
+      },
+      {
+        "periodIndex": 2,
+        "subject": "Chemistry",
+        "room": "Rm 203",
+        "startTime": "10:00",
+        "endTime": "11:00",
+        "lectureId": "gvbg-mon-p3-0728"
+      },
+      {
+        "periodIndex": 4,
+        "subject": "English Literature",
+        "room": "Rm 205",
+        "startTime": "12:00",
+        "endTime": "13:00",
+        "lectureId": "gvbg-mon-p5-0728"
+      },
+      {
+        "periodIndex": 6,
+        "subject": "History",
+        "room": "Rm 208",
+        "startTime": "14:00",
+        "endTime": "15:00",
+        "lectureId": "gvbg-mon-p7-0728"
+      }
+    ],
+    "status": "Approved",
+    "substituteTeacher": "abc@gmail.com",
+    "createdAt": "2025-07-27T10:31:59.587Z",
+    "updatedAt": "2025-07-27T10:32:32.123Z"
   }
 ]

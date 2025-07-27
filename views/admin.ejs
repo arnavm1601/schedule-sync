@@ -66,7 +66,7 @@
                         <thead>
                             <tr>
                                 <th>Days/Time</th>
-                                <% for (let i = 1; i <= 8; i++) { %>
+                                <% for (let i = 1; i <= 7; i++) { %>
                                     <th>Period <%= i %><br><span class="time-slot" id="period-<%= i %>-time"></span></th>
                                 <% } %>
                             </tr>
@@ -76,7 +76,7 @@
                             <% days.forEach(day => { %>
                                 <tr>
                                     <td class="day-header"><%= day.charAt(0).toUpperCase() + day.slice(1) %></td>
-                                    <% for (let i = 0; i < 8; i++) { %>
+                                    <% for (let i = 0; i < 7; i++) { %>
                                         <td class="timetable-cell" data-day="<%= day %>" data-period-index="<%= i %>">
                                             <!-- Lecture details will be populated here by JS -->
                                         </td>
@@ -232,14 +232,13 @@
 
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const periodTimes = [
-            { start: '08:00', end: '09:00' },
-            { start: '09:00', end: '10:00' },
-            { start: '10:00', end: '11:00' },
-            { start: '11:00', end: '12:00' },
-            { start: '12:00', end: '13:00' },
-            { start: '13:00', end: '14:00' },
-            { start: '14:00', end: '15:00' },
-            { start: '15:00', end: '16:00' }
+            { start: '09:00', end: '10:00' }, // Period 1
+            { start: '10:00', end: '11:00' }, // Period 2
+            { start: '11:00', end: '12:00' }, // Period 3
+            { start: '12:00', end: '13:00' }, // Period 4
+            { start: '13:00', end: '14:00' }, // Period 5
+            { start: '14:00', end: '15:00' }, // Period 6
+            { start: '15:00', end: '16:00' }  // Period 7 (ends at 4 PM)
         ];
 
         let currentSelectedTeacherEmail = '';
@@ -297,7 +296,8 @@
 
         function populateTimetable(timetable) {
             days.forEach(day => {
-                for (let i = 0; i < 8; i++) {
+                // Changed loop limit from 8 to 7
+                for (let i = 0; i < 7; i++) {
                     const cell = document.querySelector(`.timetable-cell[data-day="${day}"][data-period-index="${i}"]`);
                     if (cell) {
                         const lecture = timetable && timetable[day] && timetable[day][i];
@@ -321,7 +321,8 @@
 
         function clearTimetable() {
             days.forEach(day => {
-                for (let i = 0; i < 8; i++) {
+                // Changed loop limit from 8 to 7
+                for (let i = 0; i < 7; i++) {
                     const cell = document.querySelector(`.timetable-cell[data-day="${day}"][data-period-index="${i}"]`);
                     if (cell) {
                         cell.innerHTML = '<span class="empty-slot">Empty</span>';
@@ -809,7 +810,7 @@
         // Initial calls
         updateLiveTime();
         setInterval(updateLiveTime, 1000);
-        populatePeriodTimes();
+        populatePeriodTimes(); // Populate time slots in header
         renderAdjustmentRequests(initialAdjustments.filter(adj => adj.status === 'Pending Admin Action'));
         fetchAndRenderMessages(); // Load initial messages
 
@@ -817,7 +818,8 @@
         function getDefaultTimetable() {
             const defaultTimetable = {};
             days.forEach(day => {
-                defaultTimetable[day] = Array(8).fill(null);
+                // Changed to 7 periods
+                defaultTimetable[day] = Array(7).fill(null);
             });
             return defaultTimetable;
         }
