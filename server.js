@@ -313,7 +313,7 @@ app.post('/api/leave-request', (req, res) => {
     const lecturesOnLeaveDay = [];
     if (teacherTimetable[leaveDayOfWeek]) {
         teacherTimetable[leaveDayOfWeek].forEach((lecture, index) => {
-            if (lecture) {
+            if (lecture && lecture.subject !== "Short Break" && lecture.subject !== "Lunch Break") { // Only count actual lectures
                 lecturesOnLeaveDay.push({
                     periodIndex: index,
                     subject: lecture.subject,
@@ -375,7 +375,7 @@ app.post('/api/adjustments/update', (req, res) => {
     }
 
     adjustments[adjustmentIndex].status = status;
-    if (substituteTeacher) {
+    if (substituteTeacher !== undefined) { // Allow setting to null explicitly
         adjustments[adjustmentIndex].substituteTeacher = substituteTeacher;
     }
     adjustments[adjustmentIndex].updatedAt = new Date().toISOString();
@@ -395,6 +395,18 @@ app.post('/api/messages', (req, res) => {
     const senderName = req.session.user.name;
     const senderRole = req.session.user.role;
 
+    // Validate recipient based on sender role
+    if (senderRole === 'teacher' && recipient !== 'admin') {
+        return res.status(403).json({ message: 'Teachers can only send messages to the admin.' });
+    }
+    if (senderRole === 'admin' && recipient === 'admin') {
+        return res.status(400).json({ message: 'Admin cannot send messages to themselves as "admin". Select a specific teacher.' });
+    }
+    const users = readUsers();
+    if (recipient !== 'admin' && !users.some(u => u.email === recipient)) {
+        return res.status(400).json({ message: 'Invalid recipient email.' });
+    }
+
     if (!recipient || !subject || !body) {
         return res.status(400).json({ message: 'Recipient, subject, and body are required.' });
     }
@@ -409,7 +421,7 @@ app.post('/api/messages', (req, res) => {
         subject,
         body,
         timestamp: new Date().toISOString(),
-        read: false
+        read: false // New: Message is unread by default
     };
 
     messages.push(newMessage);
@@ -431,13 +443,12 @@ app.get('/api/messages', (req, res) => {
     let userMessages = [];
 
     if (currentUserRole === 'admin') {
-        // Admin gets all messages where recipient is 'admin' OR sender is 'admin'
+        // Admin gets all messages where recipient is 'admin' OR sender is a teacher
         userMessages = allMessages.filter(msg =>
-            msg.recipient === 'admin' || msg.senderRole === 'admin'
+            msg.recipient === 'admin' || msg.senderRole === 'teacher'
         );
     } else if (currentUserRole === 'teacher') {
-        // Teacher gets messages where recipient is their email OR sender is 'admin' AND recipient is their email
-        // OR sender is their email AND recipient is 'admin'
+        // Teacher gets messages where recipient is their email OR sender is their email AND recipient is 'admin'
         userMessages = allMessages.filter(msg =>
             (msg.recipient === currentUserEmail && msg.senderRole === 'admin') || // Admin to this teacher
             (msg.senderEmail === currentUserEmail && msg.recipient === 'admin')    // This teacher to admin
@@ -450,6 +461,35 @@ app.get('/api/messages', (req, res) => {
     userMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.status(200).json(userMessages);
+});
+
+// API: Mark message as read
+app.put('/api/messages/:id/read', (req, res) => {
+    if (!req.session.user) {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const messageId = req.params.id;
+    const currentUserEmail = req.session.user.email;
+    const currentUserRole = req.session.user.role;
+
+    const messages = readMessages();
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+
+    if (messageIndex === -1) {
+        return res.status(404).json({ message: 'Message not found.' });
+    }
+
+    const messageToUpdate = messages[messageIndex];
+
+    // Only allow the recipient to mark as read
+    if (messageToUpdate.recipient === currentUserEmail || (currentUserRole === 'admin' && messageToUpdate.recipient === 'admin')) {
+        messageToUpdate.read = true;
+        writeMessages(messages);
+        return res.status(200).json({ message: 'Message marked as read.', updatedMessage: messageToUpdate });
+    } else {
+        return res.status(403).json({ message: 'You are not authorized to mark this message as read.' });
+    }
 });
 
 
