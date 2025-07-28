@@ -469,8 +469,6 @@
                 composeForm.querySelector('button[type="submit"]').disabled = false;
             }
         });
-
-        // Close modals when clicking outside
         window.onclick = function(event) {
             if (event.target == composeModal) {
                 composeModal.style.display = 'none';
@@ -478,7 +476,7 @@
             if (event.target == viewMessageModal) {
                 viewMessageModal.style.display = 'none';
             }
-            if (event.target == customMessageBox) { // Allow closing custom message box by clicking outside
+            if (event.target == customMessageBox) { 
                 customMessageBox.style.display = 'none';
             }
         }
