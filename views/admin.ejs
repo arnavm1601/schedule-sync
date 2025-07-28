@@ -819,12 +819,9 @@
         function getDefaultTimetable() {
             const defaultTimetable = {};
             days.forEach(day => {
-                defaultTimetable[day] = Array(8).fill(null); // 8 periods, initially null
-            });
+                defaultTimetable[day] = Array(8).fill(null); });
             return defaultTimetable;
         }
-
-        // Smooth scrolling for sidebar links
         document.querySelectorAll('.sidebar-menu .scroll-link').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
