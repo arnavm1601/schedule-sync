@@ -3,9 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
-const { v4: uuidv4 } = require('uuid'); // Import UUID generator
-
-
+const { v4: uuidv4 } = require('uuid'); 
 const app = express();
 const PORT = 3000;
 app.use(express.urlencoded({ extended: true }));
@@ -13,7 +11,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.use(session({
-    secret: 'fdshjk7394i', // Changed secret for security
+    secret: 'fdshjk7394i', 
     resave: false,
     saveUninitialized: true
 }));
@@ -31,10 +29,9 @@ const upload = multer({ storage });
 
 const userDataPath = path.join(__dirname, 'data', 'users.json');
 const timetablePath = path.join(__dirname, 'data', 'timetable.json');
-const adjustmentsPath = path.join(__dirname, 'data', 'adjustments.json'); // New path for adjustments
-const messagesPath = path.join(__dirname, 'data', 'messages.json'); // New path for messages
+const adjustmentsPath = path.join(__dirname, 'data', 'adjustments.json'); 
+const messagesPath = path.join(__dirname, 'data', 'messages.json'); 
 
-// Helper functions for reading/writing JSON files
 function readUsers() {
     try {
         const data = fs.readFileSync(userDataPath, 'utf8');
@@ -106,33 +103,26 @@ function writeMessages(messages) {
     }
 }
 
-
-// Helper to get a default empty timetable for a new teacher
-// Now returns an array of nulls for each period, to store lecture objects
 function getDefaultTimetable() {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     // Changed from 8 to 7 periods
     const defaultTimetable = {};
     days.forEach(day => {
-        defaultTimetable[day] = Array(7).fill(null); // 7 periods, initially null
+        defaultTimetable[day] = Array(7).fill(null); 
     });
     return defaultTimetable;
 }
 
-// Helper function to escape string for JavaScript literal (MOVED HERE)
 function escapeJsString(str) {
-    return str.replace(/\\/g, '\\\\') // Escape backslashes
-              .replace(/'/g, '\\\'')  // Escape single quotes
-              .replace(/"/g, '\\\"')  // Escape double quotes
-              .replace(/\n/g, '\\n')  // Escape newlines
-              .replace(/\r/g, '\\r')  // Escape carriage returns
-              .replace(/\t/g, '\\t')  // Escape tabs
-              .replace(/<\/script>/g, '<\\/script>'); // Escape </script>
+    return str.replace(/\\/g, '\\\\') 
+    
+              .replace(/'/g, '\\\'') 
+              .replace(/"/g, '\\\"') 
+              .replace(/\n/g, '\\n') 
+              .replace(/\r/g, '\\r') 
+              .replace(/\t/g, '\\t') 
+              .replace(/<\/script>/g, '<\\/script>'); 
 }
-
-
-// --- Routes ---
-
 app.get('/', (req, res) => {
     if (req.session.user) {
         return res.redirect(req.session.user.role === 'admin' ? '/admin' : '/timetable');
@@ -190,7 +180,6 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// --- Admin Routes ---
 app.get('/admin', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.redirect('/login');
@@ -198,23 +187,18 @@ app.get('/admin', (req, res) => {
     const users = readUsers();
     const teachers = users.filter(u => u.role === 'teacher');
     const allTimetables = readAllTimetables();
-    const initialTimetable = getDefaultTimetable(); // Default empty timetable for display
-    const adjustments = readAdjustments(); // Fetch adjustments for admin dashboard
-
-    // Filter out non-teacher users from the teachers list for the dropdown
+    const adjustments = readAdjustments(); 
     const availableTeachers = users.filter(u => u.role === 'teacher');
-
     res.render('admin', {
         user: req.session.user,
-        teachers: availableTeachers, // Pass filtered teachers
+        teachers: availableTeachers,
         allTimetables: allTimetables,
-        timetable: initialTimetable, // This will be replaced by client-side logic
-        adjustments: adjustments, // Pass adjustments to the admin dashboard
-        escapeJsString: escapeJsString // Pass the helper function to the EJS template
+        timetable: initialTimetable,
+        adjustments: adjustments, 
+        escapeJsString: escapeJsString
     });
 });
 
-// ADMIN API: Add/Update a single lecture for a teacher
 app.post('/api/lectures', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -232,14 +216,11 @@ app.post('/api/lectures', (req, res) => {
     }
 
     const teacherTimetable = allTimetables[teacherEmail];
-
-    // Validate periodIndex (changed from 8 to 7)
     if (periodIndex < 0 || periodIndex >= 7) {
         return res.status(400).json({ message: 'Invalid period index.' });
     }
-
     const newLecture = {
-        id: lectureId || uuidv4(), // Use existing ID if provided (for update), otherwise generate new
+        id: lectureId || uuidv4(), 
         subject,
         room,
         startTime,
@@ -251,8 +232,6 @@ app.post('/api/lectures', (req, res) => {
 
     res.status(200).json({ message: 'Lecture saved successfully', lecture: newLecture });
 });
-
-// ADMIN API: Delete a single lecture for a teacher
 app.delete('/api/lectures/:teacherEmail/:day/:periodId', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -284,8 +263,6 @@ app.delete('/api/lectures/:teacherEmail/:day/:periodId', (req, res) => {
     res.status(200).json({ message: 'Lecture deleted successfully.' });
 });
 
-
-// Teacher Leave Request API
 app.post('/api/leave-request', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'teacher') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -305,8 +282,6 @@ app.post('/api/leave-request', (req, res) => {
     if (!teacherTimetable) {
         return res.status(404).json({ message: 'Teacher timetable not found.' });
     }
-
-    // Convert leaveDate to a Date object to get the day of the week
     const leaveDay = new Date(leaveDate);
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const leaveDayOfWeek = daysOfWeek[leaveDay.getDay()];
@@ -321,7 +296,7 @@ app.post('/api/leave-request', (req, res) => {
                     room: lecture.room,
                     startTime: lecture.startTime,
                     endTime: lecture.endTime,
-                    lectureId: lecture.id // Include lecture ID for potential future reference
+                    lectureId: lecture.id 
                 });
             }
         });
@@ -335,7 +310,7 @@ app.post('/api/leave-request', (req, res) => {
         leaveDate,
         reason,
         lectures: lecturesOnLeaveDay,
-        status: 'Pending Admin Action', // Initial status
+        status: 'Pending Admin Action', 
         substituteTeacher: null,
         createdAt: new Date().toISOString()
     };
@@ -346,7 +321,6 @@ app.post('/api/leave-request', (req, res) => {
     res.status(200).json({ message: 'Leave request submitted and adjustments created.', adjustment: newAdjustmentRequest });
 });
 
-// Admin API: Fetch pending adjustment requests
 app.get('/api/adjustments/pending', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -356,7 +330,6 @@ app.get('/api/adjustments/pending', (req, res) => {
     res.status(200).json(pendingAdjustments);
 });
 
-// Admin API: Update an adjustment request (assign substitute / mark resolved)
 app.post('/api/adjustments/update', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -376,7 +349,7 @@ app.post('/api/adjustments/update', (req, res) => {
     }
 
     adjustments[adjustmentIndex].status = status;
-    if (substituteTeacher !== undefined) { // Allow setting to null explicitly
+    if (substituteTeacher !== undefined) { 
         adjustments[adjustmentIndex].substituteTeacher = substituteTeacher;
     }
     adjustments[adjustmentIndex].updatedAt = new Date().toISOString();
@@ -385,18 +358,15 @@ app.post('/api/adjustments/update', (req, res) => {
     res.status(200).json({ message: 'Adjustment request updated successfully.', adjustment: adjustments[adjustmentIndex] });
 });
 
-// API: Send a message
 app.post('/api/messages', (req, res) => {
     if (!req.session.user) {
         return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    const { recipient, subject, body } = req.body; // recipient can be an email or 'admin'
+    const { recipient, subject, body } = req.body; 
     const senderEmail = req.session.user.email;
     const senderName = req.session.user.name;
     const senderRole = req.session.user.role;
-
-    // Validate recipient based on sender role
     if (senderRole === 'teacher' && recipient !== 'admin') {
         return res.status(403).json({ message: 'Teachers can only send messages to the admin.' });
     }
@@ -418,12 +388,12 @@ app.post('/api/messages', (req, res) => {
         senderEmail,
         senderName,
         senderRole,
-        recipient, // Can be a teacher's email or 'admin'
+        recipient,
         subject,
         body,
         timestamp: new Date().toISOString(),
-        read: false // New: Message is unread by default
-    };
+        read: false
+    }
 
     messages.push(newMessage);
     writeMessages(messages);
@@ -431,7 +401,6 @@ app.post('/api/messages', (req, res) => {
     res.status(200).json({ message: 'Message sent successfully.', message: newMessage });
 });
 
-// API: Get messages for the current user
 app.get('/api/messages', (req, res) => {
     if (!req.session.user) {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -444,27 +413,22 @@ app.get('/api/messages', (req, res) => {
     let userMessages = [];
 
     if (currentUserRole === 'admin') {
-        // Admin gets all messages where recipient is 'admin' OR sender is a teacher
         userMessages = allMessages.filter(msg =>
             msg.recipient === 'admin' || msg.senderRole === 'teacher'
         );
     } else if (currentUserRole === 'teacher') {
-        // Teacher gets messages where recipient is their email OR sender is their email AND recipient is 'admin'
+        
         userMessages = allMessages.filter(msg =>
-            (msg.recipient === currentUserEmail && msg.senderRole === 'admin') || // Admin to this teacher
-            (msg.senderEmail === currentUserEmail && msg.recipient === 'admin')    // This teacher to admin
+            (msg.recipient === currentUserEmail && msg.senderRole === 'admin') ||
+            (msg.senderEmail === currentUserEmail && msg.recipient === 'admin')  
         );
     } else {
         return res.status(403).json({ message: 'Invalid user role.' });
     }
-
-    // Sort messages by timestamp, newest first
     userMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.status(200).json(userMessages);
 });
-
-// API: Mark message as read
 app.put('/api/messages/:id/read', (req, res) => {
     if (!req.session.user) {
         return res.status(403).json({ message: 'Unauthorized' });
@@ -482,8 +446,6 @@ app.put('/api/messages/:id/read', (req, res) => {
     }
 
     const messageToUpdate = messages[messageIndex];
-
-    // Only allow the recipient to mark as read
     if (messageToUpdate.recipient === currentUserEmail || (currentUserRole === 'admin' && messageToUpdate.recipient === 'admin')) {
         messageToUpdate.read = true;
         writeMessages(messages);
@@ -493,11 +455,8 @@ app.put('/api/messages/:id/read', (req, res) => {
     }
 });
 
-
-// --- Frontend Render Routes (unchanged for now, will be updated in later phases) ---
 app.post('/admin/timetable', (req, res) => {
-    // This route will be deprecated or repurposed as lecture updates will happen via API
-    // For now, it will just redirect.
+    
     res.redirect('/admin');
 });
 
@@ -512,7 +471,7 @@ app.get('/timetable', (req, res) => {
     res.render('timetable', {
         user: req.session.user,
         timetable: teacherTimetable,
-        escapeJsString: escapeJsString // Pass the helper function to the EJS template
+        escapeJsString: escapeJsString 
     });
 });
 
