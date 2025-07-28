@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Timetable</title>
     <link rel="stylesheet" href="/css/time-table.css">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="main-container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-sync-alt"></i> Schedule Sync
@@ -29,9 +27,7 @@
             <button class="sidebar-button upcoming-event"><i class="fas fa-bell"></i> Upcoming Event</button>
         </div>
 
-        <!-- Main content area -->
         <div class="content-area">
-            <!-- Navbar -->
             <div class="navbar">
                 <div class="navbar-left">
                     <span class="navbar-date" id="currentDate"></span>
@@ -44,14 +40,13 @@
                 </div>
             </div>
 
-            <!-- Timetable section -->
             <div class="timetable-section" id="timetable-section">
                 <h3>My Timetable</h3>
                 <table class="timetable-table">
                     <thead>
                         <tr>
                             <th>Days/Time</th>
-                            <% for (let i = 1; i <= 8; i++) { %>
+                            <% for (let i = 1; i <= 7; i++) { %>
                                 <th>Period <%= i %><br><span class="time-slot" id="period-<%= i %>-time"></span></th>
                             <% } %>
                         </tr>
@@ -61,7 +56,7 @@
                         <% days.forEach(day => { %>
                             <tr>
                                 <td class="day-header"><%= day.charAt(0).toUpperCase() + day.slice(1) %></td>
-                                <% for (let i = 0; i < 8; i++) { %>
+                                <% for (let i = 0; i < 7; i++) { %>
                                     <td class="timetable-cell">
                                         <% if (timetable[day] && timetable[day][i]) { %>
                                             <strong><%= timetable[day][i].subject %></strong><br>
@@ -78,14 +73,12 @@
                 </table>
             </div>
 
-            <!-- Lecture Count Summary -->
             <div class="lecture-summary-section">
                 <h3>Lecture Summary</h3>
                 <p>Lectures Completed This Week: <span id="lecturesCompleted">0</span></p>
                 <p>Lectures Remaining This Week: <span id="lecturesRemaining">0</span></p>
             </div>
 
-            <!-- Leave Request Form -->
             <div class="leave-request-section" id="leave-request-section">
                 <h3>Request Leave</h3>
                 <form id="leaveRequestForm">
@@ -99,7 +92,6 @@
                 </form>
             </div>
 
-            <!-- Custom Message Box -->
             <div id="customMessageBox" class="message-box-custom" style="display:none;">
                 <p id="messageBoxText"></p>
                 <div class="button-group" id="messageBoxButtons">
@@ -107,23 +99,19 @@
                     <button id="messageBoxCancel" class="btn btn-secondary" style="display:none;">Cancel</button>
                 </div>
             </div>
-            <!-- Loading Overlay -->
             <div id="loadingOverlay" class="loading-overlay" style="display:none;">
                 <div class="spinner"></div>
                 <p>Loading...</p>
             </div>
 
-            <!-- Inbox Section -->
             <div class="inbox-section" id="inbox-section">
                 <h3>Inbox</h3>
                 <div class="message-list" id="messageList">
-                    <!-- Messages will be loaded here -->
                     <p id="noMessagesMessage">No messages.</p>
                 </div>
                 <button class="compose-button" id="composeMessageButton">Compose Message to Admin</button>
             </div>
 
-            <!-- Compose Message Modal -->
             <div id="composeModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button">&times;</span>
@@ -139,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- View Message Modal -->
             <div id="viewMessageModal" class="modal">
                 <div class="modal-content">
                     <span class="close-button">&times;</span>
@@ -157,29 +144,25 @@
     </div>
 
     <script>
-        // EJS variables passed from the server
-        const teacherTimetable = JSON.parse('<%- escapeJsString(JSON.stringify(timetable)) %>');
+        // This variable is now directly injected from the EJS context, no need for escapeJsString
+        const teacherTimetable = <%- JSON.stringify(timetable) %>;
         const userEmail = '<%= user.email %>';
         const userRole = '<%= user.role %>';
-
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const periodTimes = [
             { start: '09:00', end: '10:00' },
             { start: '10:00', end: '11:00' },
             { start: '11:00', end: '12:00' },
-            { start: '12:00', end: '1:00' },
-            { start: '1:00', end: '2:00' },
-            { start: '2:00', end: '3:00' },
-            { start: '3:00', end: '4:00' }
+            { start: '12:00', end: '13:00' },
+            { start: '13:00', end: '14:00' },
+            { start: '14:00', end: '15:00' },
+            { start: '15:00', end: '16:00' }
         ];
-
-        // --- Utility Functions for UX ---
         const customMessageBox = document.getElementById('customMessageBox');
         const messageBoxText = document.getElementById('messageBoxText');
         const messageBoxConfirm = document.getElementById('messageBoxConfirm');
         const messageBoxCancel = document.getElementById('messageBoxCancel');
         const loadingOverlay = document.getElementById('loadingOverlay');
-
         function showCustomMessage(message, type = 'info', onConfirm = null, onCancel = null) {
             messageBoxText.textContent = message;
             customMessageBox.className = `message-box-custom ${type}`;
@@ -197,14 +180,13 @@
             } else {
                 messageBoxCancel.style.display = 'none';
             }
-            customMessageBox.style.display = 'flex'; // Use flex for centering
+            customMessageBox.style.display = 'flex';
         }
 
         function showLoading(show) {
             loadingOverlay.style.display = show ? 'flex' : 'none';
         }
 
-        // --- Live Time Update ---
         function updateLiveTime() {
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
@@ -214,7 +196,6 @@
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
 
-        // --- Timetable Display ---
         function populatePeriodTimes() {
             periodTimes.forEach((time, index) => {
                 const span = document.getElementById(`period-${index + 1}-time`);
@@ -224,26 +205,25 @@
             });
         }
 
-        // --- Lecture Count Summary Logic ---
         function updateLectureSummary() {
             let completed = 0;
             let remaining = 0;
             const now = new Date();
-            const currentDayIndex = now.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
+            const currentDayIndex = now.getDay();
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
 
-            // Map JavaScript's getDay() to our 'days' array index (Monday=0, Saturday=5)
-            let currentTimetableDayIndex = currentDayIndex - 1; // Adjust for 0-indexed days array (Mon=0, Tue=1...)
-
-            if (currentDayIndex === 0) { // If it's Sunday, consider all previous days as completed for the week
-                currentTimetableDayIndex = 6; // Effectively means all days up to Saturday are "past"
+            let currentTimetableDayIndex = currentDayIndex - 1;
+            if (currentDayIndex === 0) { // Sunday
+                currentTimetableDayIndex = 6; // Map to Saturday for our 6-day week (assuming Sunday is not in timetable)
             }
+
 
             days.forEach((dayName, dayIdx) => {
                 const dayLectures = teacherTimetable[dayName];
                 if (dayLectures) {
-                    dayLectures.forEach((lecture, periodIdx) => {
+                    for (let periodIdx = 0; periodIdx < 7; periodIdx++) {
+                        const lecture = dayLectures[periodIdx];
                         if (lecture && lecture.subject !== "Short Break" && lecture.subject !== "Lunch Break") {
                             const lectureStartHour = parseInt(lecture.startTime.split(':')[0]);
                             const lectureStartMinute = parseInt(lecture.startTime.split(':')[1]);
@@ -253,7 +233,6 @@
                             if (dayIdx < currentTimetableDayIndex) {
                                 completed++;
                             } else if (dayIdx === currentTimetableDayIndex) {
-                                // Same day: compare times
                                 const lectureStartTimeInMinutes = lectureStartHour * 60 + lectureStartMinute;
                                 const lectureEndTimeInMinutes = lectureEndHour * 60 + lectureEndMinute;
                                 const currentTimeInMinutes = currentHour * 60 + currentMinute;
@@ -262,23 +241,20 @@
                                     completed++;
                                 } else if (currentTimeInMinutes < lectureStartTimeInMinutes) {
                                     remaining++;
-                                } else {
-                                    // Lecture is currently ongoing
+                                } else { // Currently in this lecture
                                     remaining++;
                                 }
                             } else {
                                 remaining++;
                             }
                         }
-                    });
+                    }
                 }
             });
             document.getElementById('lecturesCompleted').textContent = completed;
             document.getElementById('lecturesRemaining').textContent = remaining;
         }
 
-
-        // --- Leave Request Form Logic ---
         const leaveRequestForm = document.getElementById('leaveRequestForm');
         const submitLeaveButton = document.getElementById('submitLeaveButton');
 
@@ -325,8 +301,6 @@
             }
         });
 
-
-        // --- Inbox Logic ---
         const messageList = document.getElementById('messageList');
         const noMessagesMessage = document.getElementById('noMessagesMessage');
         const composeMessageButton = document.getElementById('composeMessageButton');
@@ -336,7 +310,6 @@
         const viewMessageModal = document.getElementById('viewMessageModal');
         const viewMessageCloseButton = viewMessageModal.querySelector('.close-button');
         const unreadMessagesCountSpan = document.getElementById('unreadMessagesCount');
-
 
         async function fetchAndRenderMessages() {
             showLoading(true);
@@ -352,12 +325,10 @@
                     return;
                 }
                 noMessagesMessage.style.display = 'none';
-
                 let unreadCount = 0;
                 messages.forEach(msg => {
                     const messageItem = document.createElement('div');
                     messageItem.classList.add('message-item');
-                    // For teachers, only mark as unread if recipient is current teacher's email and it's not read
                     if (!msg.read && msg.recipient === userEmail) {
                         messageItem.classList.add('unread');
                         unreadCount++;
@@ -372,7 +343,6 @@
                     messageItem.addEventListener('click', () => showViewMessageModal(msg));
                     messageList.appendChild(messageItem);
                 });
-
                 if (unreadCount > 0) {
                     unreadMessagesCountSpan.textContent = unreadCount;
                     unreadMessagesCountSpan.style.display = 'inline-block';
@@ -398,7 +368,6 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
                 if (response.ok) {
-                    // Message marked as read on backend, refresh UI
                     fetchAndRenderMessages();
                 } else {
                     const result = await response.json();
@@ -417,9 +386,7 @@
             document.getElementById('viewMessageTimestamp').textContent = new Date(message.timestamp).toLocaleString();
             document.getElementById('viewMessageBody').textContent = message.body;
 
-            viewMessageModal.style.display = 'flex'; // Use flex for centering
-
-            // Mark message as read if it's unread and current user is the recipient
+            viewMessageModal.style.display = 'flex';
             if (!message.read && message.recipient === userEmail) {
                 markMessageAsRead(message.id);
             }
@@ -431,9 +398,8 @@
 
         composeMessageButton.addEventListener('click', () => {
             composeForm.reset();
-            composeModal.style.display = 'flex'; // Use flex for centering
+            composeModal.style.display = 'flex';
         });
-
         composeCloseButton.onclick = function() {
             composeModal.style.display = 'none';
         }
@@ -443,7 +409,7 @@
             showLoading(true);
             composeForm.querySelector('button[type="submit"]').disabled = true;
 
-            const recipient = document.getElementById('messageRecipient').value; // Should be 'admin'
+            const recipient = document.getElementById('messageRecipient').value;
             const subject = document.getElementById('messageSubject').value;
             const body = document.getElementById('messageBody').value;
 
@@ -476,13 +442,11 @@
             if (event.target == viewMessageModal) {
                 viewMessageModal.style.display = 'none';
             }
-            if (event.target == customMessageBox) { 
+            if (event.target == customMessageBox) {
                 customMessageBox.style.display = 'none';
             }
         }
 
-
-        // Initial calls
         updateLiveTime();
         populatePeriodTimes();
         setInterval(() => {
@@ -491,7 +455,6 @@
         }, 1000);
         fetchAndRenderMessages();
 
-        // Smooth scrolling for sidebar links
         document.querySelectorAll('.sidebar-menu .scroll-link').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

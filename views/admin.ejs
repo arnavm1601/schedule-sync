@@ -7,7 +7,6 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
            Schedule Sync
@@ -25,7 +24,6 @@
             </ul>
             <button class="sidebar-button upcoming-event"><i class="fas fa-bell"></i> Upcoming Event</button>
 
-            <!-- Selected Teacher Details - MOVED HERE -->
             <div id="teacherDetails" class="teacher-details-display" style="display: none;">
                 <h4>Selected Teacher Details:</h4>
                 <p><strong>Name:</strong> <span id="detailName"></span></p>
@@ -79,7 +77,6 @@
                                     <td class="day-header"><%= day.charAt(0).toUpperCase() + day.slice(1) %></td>
                                     <% for (let i = 0; i < 7; i++) { %>
                                         <td class="timetable-cell" data-day="<%= day %>" data-period-index="<%= i %>">
-                                            <!-- Lecture details will be populated here by JS -->
                                         </td>
                                     <% } %>
                                 </tr>
@@ -88,7 +85,6 @@
                     </table>
                 </div>
 
-                <!-- Custom Message Box -->
                 <div id="customMessageBox" class="message-box-custom" style="display:none;">
                     <p id="messageBoxText"></p>
                     <div class="button-group" id="messageBoxButtons">
@@ -96,14 +92,12 @@
                         <button id="messageBoxCancel" class="btn btn-secondary" style="display:none;">Cancel</button>
                     </div>
                 </div>
-                <!-- Loading Overlay -->
                 <div id="loadingOverlay" class="loading-overlay" style="display:none;">
                     <div class="spinner"></div>
                     <p>Loading...</p>
                 </div>
 
 
-                <!-- Lecture Input Modal -->
                 <div id="lectureModal" class="modal">
                     <div class="modal-content">
                         <span class="close-button">&times;</span>
@@ -132,16 +126,13 @@
                     </div>
                 </div>
 
-                <!-- Adjustment Requests Section -->
                 <div class="adjustments-section" id="adjustments-section">
                     <h3>Pending Leave Adjustment Requests</h3>
                     <div id="adjustmentRequestsList">
-                        <!-- Adjustment requests will be loaded here by JavaScript -->
                         <p id="noAdjustmentsMessage">No pending adjustment requests.</p>
                     </div>
                 </div>
 
-                 <!-- Adjustment Details Modal -->
                 <div id="adjustmentModal" class="modal">
                     <div class="modal-content">
                         <span class="close-button">&times;</span>
@@ -167,24 +158,20 @@
                             <label for="substituteTeacherSelect">Assign Substitute (Optional):</label>
                             <select id="substituteTeacherSelect">
                                 <option value="">No Substitute</option>
-                                <!-- Teachers will be dynamically loaded here -->
                             </select>
                             <button type="submit">Update Adjustment</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Inbox Section -->
                 <div class="inbox-section" id="inbox-section">
                     <h3>Inbox</h3>
                     <div class="message-list" id="messageList">
-                        <!-- Messages will be loaded here -->
                         <p id="noMessagesMessage">No messages.</p>
                     </div>
                     <button class="compose-button" id="composeMessageButton">Compose Message</button>
                 </div>
 
-                <!-- Compose Message Modal -->
                 <div id="composeModal" class="modal">
                     <div class="modal-content">
                         <span class="close-button">&times;</span>
@@ -206,7 +193,6 @@
                     </div>
                 </div>
 
-                <!-- View Message Modal -->
                 <div id="viewMessageModal" class="modal">
                     <div class="modal-content">
                         <span class="close-button">&times;</span>
@@ -225,26 +211,23 @@
     </div>
 
     <script>
-        // EJS variables passed from the server
-        const allTimetables = JSON.parse('<%- escapeJsString(JSON.stringify(allTimetables)) %>');
-        const teachersData = JSON.parse('<%- escapeJsString(JSON.stringify(teachers)) %>');
-        const initialAdjustments = JSON.parse('<%- escapeJsString(JSON.stringify(adjustments)) %>');
-        const currentUserEmail = '<%= user.email %>'; // Current logged-in admin's email
-
+        // These variables are now directly injected from the EJS context, no need for escapeJsString
+        const allTimetables = <%- JSON.stringify(allTimetables) %>;
+        const teachersData = <%- JSON.stringify(teachers) %>;
+        const initialAdjustments = <%- JSON.stringify(adjustments) %>;
+        const currentUserEmail = '<%= user.email %>';
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const periodTimes = [
-            { start: '09:00', end: '10:00' }, // Period 1
-            { start: '10:00', end: '11:00' }, // Period 2
-            { start: '11:00', end: '12:00' }, // Period 3
-            { start: '12:00', end: '13:00' }, // Period 4
-            { start: '13:00', end: '14:00' }, // Period 5
-            { start: '14:00', end: '15:00' }, // Period 6
-            { start: '15:00', end: '16:00' }  // Period 7 (ends at 4 PM)
+            { start: '09:00', end: '10:00' },
+            { start: '10:00', end: '11:00' },
+            { start: '11:00', end: '12:00' },
+            { start: '12:00', end: '13:00' },
+            { start: '13:00', end: '14:00' },
+            { start: '14:00', end: '15:00' },
+            { start: '15:00', end: '16:00' }
         ];
-
         let currentSelectedTeacherEmail = '';
 
-        // --- Utility Functions for UX ---
         const customMessageBox = document.getElementById('customMessageBox');
         const messageBoxText = document.getElementById('messageBoxText');
         const messageBoxConfirm = document.getElementById('messageBoxConfirm');
@@ -268,14 +251,13 @@
             } else {
                 messageBoxCancel.style.display = 'none';
             }
-            customMessageBox.style.display = 'flex'; // Use flex for centering
+            customMessageBox.style.display = 'flex';
         }
 
         function showLoading(show) {
             loadingOverlay.style.display = show ? 'flex' : 'none';
         }
 
-        // --- Live Time Update ---
         function updateLiveTime() {
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
@@ -285,7 +267,6 @@
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
 
-        // --- Timetable Display & Interaction ---
         function populatePeriodTimes() {
             periodTimes.forEach((time, index) => {
                 const span = document.getElementById(`period-${index + 1}-time`);
@@ -297,7 +278,6 @@
 
         function populateTimetable(timetable) {
             days.forEach(day => {
-                // Changed loop limit from 8 to 7
                 for (let i = 0; i < 7; i++) {
                     const cell = document.querySelector(`.timetable-cell[data-day="${day}"][data-period-index="${i}"]`);
                     if (cell) {
@@ -309,7 +289,7 @@
                                 <span class="lecture-time">${lecture.startTime}-${lecture.endTime}</span>
                             `;
                             cell.classList.remove('empty-cell');
-                            cell.dataset.lectureId = lecture.id; // Store lecture ID for editing
+                            cell.dataset.lectureId = lecture.id;
                         } else {
                             cell.innerHTML = '<span class="empty-slot">Empty</span>';
                             cell.classList.add('empty-cell');
@@ -322,7 +302,6 @@
 
         function clearTimetable() {
             days.forEach(day => {
-                // Changed loop limit from 8 to 7
                 for (let i = 0; i < 7; i++) {
                     const cell = document.querySelector(`.timetable-cell[data-day="${day}"][data-period-index="${i}"]`);
                     if (cell) {
@@ -334,7 +313,6 @@
             });
         }
 
-        // --- Teacher Selection Logic ---
         document.getElementById('teacherSelect').addEventListener('change', function() {
             currentSelectedTeacherEmail = this.value;
             const teacherDetailsDiv = document.getElementById('teacherDetails');
@@ -347,27 +325,25 @@
                     document.getElementById('detailEmail').textContent = selectedTeacher.email;
                     document.getElementById('detailRole').textContent = selectedTeacher.role;
                     document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
-                    teacherDetailsDiv.style.display = 'block'; // Show when a teacher is selected
+                    teacherDetailsDiv.style.display = 'block';
 
                     const teacherTimetable = allTimetables[currentSelectedTeacherEmail] || getDefaultTimetable();
                     populateTimetable(teacherTimetable);
                 } else {
-                    teacherDetailsDiv.style.display = 'none'; // Hide if no teacher or not found
+                    teacherDetailsDiv.style.display = 'none';
                     clearTimetable();
                 }
             } else {
-                teacherDetailsDiv.style.display = 'none'; // Hide if "Select a Teacher" is chosen
+                teacherDetailsDiv.style.display = 'none';
                 clearTimetable();
             }
         });
 
-        // --- Lecture Modal Logic ---
         const lectureModal = document.getElementById('lectureModal');
         const lectureCloseButton = lectureModal.querySelector('.close-button');
         const lectureForm = document.getElementById('lectureForm');
         const saveLectureButton = document.getElementById('saveLectureButton');
         const deleteLectureButton = document.getElementById('deleteLectureButton');
-
         function showLectureModal(day = null, periodIndex = null, lecture = null) {
             lectureForm.reset();
             document.getElementById('modalLectureId').value = '';
@@ -376,7 +352,6 @@
             document.getElementById('modalTeacherEmail').value = currentSelectedTeacherEmail;
             document.getElementById('modalDay').value = day;
             document.getElementById('modalPeriodIndex').value = periodIndex;
-
             if (lecture) {
                 document.getElementById('modalLectureId').value = lecture.id;
                 document.getElementById('subject').value = lecture.subject;
@@ -390,7 +365,7 @@
                     document.getElementById('endTime').value = periodTimes[periodIndex].end;
                 }
             }
-            lectureModal.style.display = 'flex'; // Use flex for centering
+            lectureModal.style.display = 'flex';
         }
 
         lectureCloseButton.onclick = function() {
@@ -416,8 +391,6 @@
                 showCustomMessage('Please select a teacher first to manage their timetable.', 'info');
             }
         });
-
-
         lectureForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             showLoading(true);
@@ -443,7 +416,6 @@
                 endTime,
                 lectureId: lectureId || undefined
             };
-
             try {
                 const response = await fetch('/api/lectures', {
                     method: 'POST',
@@ -451,7 +423,6 @@
                     body: JSON.stringify(payload)
                 });
                 const result = await response.json();
-
                 if (response.ok) {
                     showCustomMessage(result.message, 'success');
                     lectureModal.style.display = 'none';
@@ -472,7 +443,6 @@
                 deleteLectureButton.disabled = false;
             }
         });
-
         deleteLectureButton.addEventListener('click', function() {
             showCustomMessage('Are you sure you want to delete this lecture?', 'confirm', async () => {
                 showLoading(true);
@@ -509,12 +479,10 @@
                     deleteLectureButton.disabled = false;
                 }
             }, () => {
-                // User cancelled, do nothing
             });
         });
 
 
-        // --- Adjustment Requests Dashboard Logic ---
         const adjustmentRequestsList = document.getElementById('adjustmentRequestsList');
         const noAdjustmentsMessage = document.getElementById('noAdjustmentsMessage');
         const adjustmentModal = document.getElementById('adjustmentModal');
@@ -529,7 +497,6 @@
                 return;
             }
             noAdjustmentsMessage.style.display = 'none';
-
             adjustments.forEach(adj => {
                 const adjDiv = document.createElement('div');
                 adjDiv.classList.add('adjustment-request-item');
@@ -542,7 +509,6 @@
                 `;
                 adjustmentRequestsList.appendChild(adjDiv);
             });
-
             document.querySelectorAll('.view-details-button').forEach(button => {
                 button.addEventListener('click', function() {
                     const adjustmentId = this.dataset.id;
@@ -596,7 +562,7 @@
                 substituteTeacherSelect.value = '';
             }
 
-            adjustmentModal.style.display = 'flex'; // Use flex for centering
+            adjustmentModal.style.display = 'flex';
         }
 
         adjustmentCloseButton.onclick = function() {
@@ -646,7 +612,6 @@
             }
         });
 
-        // --- Inbox Logic ---
         const messageList = document.getElementById('messageList');
         const noMessagesMessage = document.getElementById('noMessagesMessage');
         const composeMessageButton = document.getElementById('composeMessageButton');
@@ -671,7 +636,6 @@
                     return;
                 }
                 noMessagesMessage.style.display = 'none';
-
                 let unreadCount = 0;
                 messages.forEach(msg => {
                     const messageItem = document.createElement('div');
@@ -716,7 +680,6 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
                 if (response.ok) {
-                    // Message marked as read on backend, refresh UI
                     fetchAndRenderMessages();
                 } else {
                     const result = await response.json();
@@ -735,9 +698,7 @@
             document.getElementById('viewMessageTimestamp').textContent = new Date(message.timestamp).toLocaleString();
             document.getElementById('viewMessageBody').textContent = message.body;
 
-            viewMessageModal.style.display = 'flex'; // Use flex for centering
-
-            // Mark message as read if it's unread and current user is the recipient
+            viewMessageModal.style.display = 'flex';
             if (!message.read && (message.recipient === currentUserEmail || (currentUserEmail === 'admin' && message.recipient === 'admin'))) {
                 markMessageAsRead(message.id);
             }
@@ -749,9 +710,8 @@
 
         composeMessageButton.addEventListener('click', () => {
             composeForm.reset();
-            composeModal.style.display = 'flex'; // Use flex for centering
+            composeModal.style.display = 'flex';
         });
-
         composeCloseButton.onclick = function() {
             composeModal.style.display = 'none';
         }
@@ -787,8 +747,6 @@
                 composeForm.querySelector('button[type="submit"]').disabled = false;
             }
         });
-
-        // Close modals when clicking outside
         window.onclick = function(event) {
             if (event.target == lectureModal) {
                 lectureModal.style.display = 'none';
@@ -802,26 +760,26 @@
             if (event.target == viewMessageModal) {
                 viewMessageModal.style.display = 'none';
             }
-            if (event.target == customMessageBox) { // Allow closing custom message box by clicking outside
+            if (event.target == customMessageBox) {
                 customMessageBox.style.display = 'none';
             }
         }
 
 
-        // Initial calls
         updateLiveTime();
         setInterval(updateLiveTime, 1000);
-        populatePeriodTimes(); // Populate time slots in header
+        populatePeriodTimes();
         renderAdjustmentRequests(initialAdjustments.filter(adj => adj.status === 'Pending Admin Action'));
-        fetchAndRenderMessages(); // Load initial messages
+        fetchAndRenderMessages();
 
-        // Helper to get a default empty timetable for a new teacher (client-side)
         function getDefaultTimetable() {
             const defaultTimetable = {};
             days.forEach(day => {
-                defaultTimetable[day] = Array(8).fill(null); });
+                defaultTimetable[day] = Array(7).fill(null);
+            });
             return defaultTimetable;
         }
+
         document.querySelectorAll('.sidebar-menu .scroll-link').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
