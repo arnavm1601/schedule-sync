@@ -144,10 +144,10 @@
     </div>
 
     <script>
-        // This variable is now directly injected from the EJS context, no need for escapeJsString
-        const teacherTimetable = <%- JSON.stringify(timetable) %>;
+        const teacherTimetable = JSON.parse('<%- escapeJsString(JSON.stringify(timetable)) %>');
         const userEmail = '<%= user.email %>';
         const userRole = '<%= user.role %>';
+
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const periodTimes = [
             { start: '09:00', end: '10:00' },
@@ -158,11 +158,13 @@
             { start: '14:00', end: '15:00' },
             { start: '15:00', end: '16:00' }
         ];
+
         const customMessageBox = document.getElementById('customMessageBox');
         const messageBoxText = document.getElementById('messageBoxText');
         const messageBoxConfirm = document.getElementById('messageBoxConfirm');
         const messageBoxCancel = document.getElementById('messageBoxCancel');
         const loadingOverlay = document.getElementById('loadingOverlay');
+
         function showCustomMessage(message, type = 'info', onConfirm = null, onCancel = null) {
             messageBoxText.textContent = message;
             customMessageBox.className = `message-box-custom ${type}`;
@@ -214,10 +216,10 @@
             const currentMinute = now.getMinutes();
 
             let currentTimetableDayIndex = currentDayIndex - 1;
-            if (currentDayIndex === 0) { // Sunday
-                currentTimetableDayIndex = 6; // Map to Saturday for our 6-day week (assuming Sunday is not in timetable)
-            }
 
+            if (currentDayIndex === 0) {
+                currentTimetableDayIndex = 6;
+            }
 
             days.forEach((dayName, dayIdx) => {
                 const dayLectures = teacherTimetable[dayName];
@@ -241,7 +243,7 @@
                                     completed++;
                                 } else if (currentTimeInMinutes < lectureStartTimeInMinutes) {
                                     remaining++;
-                                } else { // Currently in this lecture
+                                } else {
                                     remaining++;
                                 }
                             } else {
@@ -325,6 +327,7 @@
                     return;
                 }
                 noMessagesMessage.style.display = 'none';
+
                 let unreadCount = 0;
                 messages.forEach(msg => {
                     const messageItem = document.createElement('div');
@@ -343,6 +346,7 @@
                     messageItem.addEventListener('click', () => showViewMessageModal(msg));
                     messageList.appendChild(messageItem);
                 });
+
                 if (unreadCount > 0) {
                     unreadMessagesCountSpan.textContent = unreadCount;
                     unreadMessagesCountSpan.style.display = 'inline-block';
@@ -387,6 +391,7 @@
             document.getElementById('viewMessageBody').textContent = message.body;
 
             viewMessageModal.style.display = 'flex';
+
             if (!message.read && message.recipient === userEmail) {
                 markMessageAsRead(message.id);
             }
@@ -400,6 +405,7 @@
             composeForm.reset();
             composeModal.style.display = 'flex';
         });
+
         composeCloseButton.onclick = function() {
             composeModal.style.display = 'none';
         }
@@ -435,6 +441,7 @@
                 composeForm.querySelector('button[type="submit"]').disabled = false;
             }
         });
+
         window.onclick = function(event) {
             if (event.target == composeModal) {
                 composeModal.style.display = 'none';

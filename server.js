@@ -4,14 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt'); 
 
 const app = express();
 const PORT = 3000;
 
-// --- File Paths for Data Storage ---
 const dataDir = path.join(__dirname, 'data');
 const usersFilePath = path.join(dataDir, 'users.json');
-const timetablesFilePath = path.join(dataDir, 'timetables.json');
+const timetablesFilePath = path.join(dataDir, 'timetable.json'); 
 const adjustmentsFilePath = path.join(dataDir, 'adjustments.json');
 const messagesFilePath = path.join(dataDir, 'messages.json');
 
@@ -40,6 +40,7 @@ async function readJsonFile(filePath) {
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
+            console.warn(`File not found: ${filePath}. Returning empty array.`);
             return []; // File not found, return empty array
         }
         console.error(`Error reading ${filePath}:`, error);
@@ -62,7 +63,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.use(session({
-    secret: 'fdshjk7394i',
+    secret: 'fdshjk7394i', // In a real app, use a strong, environment-variable-based secret
     resave: false,
     saveUninitialized: true
 }));
@@ -122,7 +123,10 @@ app.post('/signup', upload.single('profilePic'), async (req, res) => {
             return res.send('Email already registered, please use a new email.');
         }
 
-        const newUser = { id: uuidv4(), name, email, password, role, profilePic };
+        // Hash the password before saving
+        const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
+
+        const newUser = { id: uuidv4(), name, email, password: hashedPassword, role, profilePic };
         users.push(newUser);
         await writeJsonFile(usersFilePath, users);
 
@@ -157,11 +161,23 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const users = await readJsonFile(usersFilePath);
-        const user = users.find(u => u.email === email && u.password === password);
+        const user = users.find(u => u.email === email); // Find user by email
+
         if (!user) {
+            console.log(`Login attempt for non-existent email: ${email}`);
             return res.send('Wrong email or password, please try again.');
         }
+
+        // Compare provided password with hashed password
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+            console.log(`Login attempt with incorrect password for email: ${email}`);
+            return res.send('Wrong email or password, please try again.');
+        }
+
         req.session.user = user;
+        console.log(`User logged in: ${user.email} (${user.role})`);
         res.redirect(user.role === 'admin' ? '/admin' : '/timetable');
     } catch (error) {
         console.error('Error during login:', error);
@@ -574,3 +590,6 @@ app.get('/timetable', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running at port : ${PORT}`);
 });
+app.locals.escapeJsString = function(str) {
+  return str.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+};

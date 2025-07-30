@@ -211,11 +211,12 @@
     </div>
 
     <script>
-        // These variables are now directly injected from the EJS context, no need for escapeJsString
-        const allTimetables = <%- JSON.stringify(allTimetables) %>;
-        const teachersData = <%- JSON.stringify(teachers) %>;
-        const initialAdjustments = <%- JSON.stringify(adjustments) %>;
+        // Parse data passed from the server. Ensure data is always an object/array.
+        const allTimetables = JSON.parse('<%- escapeJsString(JSON.stringify(allTimetables || {})) %>');
+        const teachersData = JSON.parse('<%- escapeJsString(JSON.stringify(teachers || [])) %>');
+        const initialAdjustments = JSON.parse('<%- escapeJsString(JSON.stringify(adjustments || [])) %>');
         const currentUserEmail = '<%= user.email %>';
+
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const periodTimes = [
             { start: '09:00', end: '10:00' },
@@ -226,6 +227,7 @@
             { start: '14:00', end: '15:00' },
             { start: '15:00', end: '16:00' }
         ];
+
         let currentSelectedTeacherEmail = '';
 
         const customMessageBox = document.getElementById('customMessageBox');
@@ -281,7 +283,10 @@
                 for (let i = 0; i < 7; i++) {
                     const cell = document.querySelector(`.timetable-cell[data-day="${day}"][data-period-index="${i}"]`);
                     if (cell) {
-                        const lecture = timetable && timetable[day] && timetable[day][i];
+                        // Ensure timetable[day] exists and is an array before accessing its elements
+                        const dayLectures = timetable && timetable[day] ? Array.from(timetable[day]) : [];
+                        const lecture = dayLectures[i];
+
                         if (lecture) {
                             cell.innerHTML = `
                                 <strong>${lecture.subject}</strong><br>
@@ -327,6 +332,7 @@
                     document.getElementById('detailProfilePic').src = `/uploads/${selectedTeacher.profilePic}`;
                     teacherDetailsDiv.style.display = 'block';
 
+                    // Ensure allTimetables[currentSelectedTeacherEmail] exists before using it
                     const teacherTimetable = allTimetables[currentSelectedTeacherEmail] || getDefaultTimetable();
                     populateTimetable(teacherTimetable);
                 } else {
@@ -344,6 +350,7 @@
         const lectureForm = document.getElementById('lectureForm');
         const saveLectureButton = document.getElementById('saveLectureButton');
         const deleteLectureButton = document.getElementById('deleteLectureButton');
+
         function showLectureModal(day = null, periodIndex = null, lecture = null) {
             lectureForm.reset();
             document.getElementById('modalLectureId').value = '';
@@ -352,6 +359,7 @@
             document.getElementById('modalTeacherEmail').value = currentSelectedTeacherEmail;
             document.getElementById('modalDay').value = day;
             document.getElementById('modalPeriodIndex').value = periodIndex;
+
             if (lecture) {
                 document.getElementById('modalLectureId').value = lecture.id;
                 document.getElementById('subject').value = lecture.subject;
@@ -383,7 +391,8 @@
                 if (lectureId) {
                     const teacherTimetable = allTimetables[currentSelectedTeacherEmail];
                     if (teacherTimetable && teacherTimetable[day]) {
-                        lecture = teacherTimetable[day].find(lec => lec && lec.id === lectureId);
+                        // Ensure teacherTimetable[day] is treated as an array
+                        lecture = Array.from(teacherTimetable[day]).find(lec => lec && lec.id === lectureId);
                     }
                 }
                 showLectureModal(day, periodIndex, lecture);
@@ -391,6 +400,8 @@
                 showCustomMessage('Please select a teacher first to manage their timetable.', 'info');
             }
         });
+
+
         lectureForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             showLoading(true);
@@ -416,6 +427,7 @@
                 endTime,
                 lectureId: lectureId || undefined
             };
+
             try {
                 const response = await fetch('/api/lectures', {
                     method: 'POST',
@@ -423,11 +435,16 @@
                     body: JSON.stringify(payload)
                 });
                 const result = await response.json();
+
                 if (response.ok) {
                     showCustomMessage(result.message, 'success');
                     lectureModal.style.display = 'none';
                     if (!allTimetables[teacherEmail]) {
                         allTimetables[teacherEmail] = getDefaultTimetable();
+                    }
+                    // Ensure the day array exists before updating
+                    if (!allTimetables[teacherEmail][day]) {
+                        allTimetables[teacherEmail][day] = Array(7).fill(null);
                     }
                     allTimetables[teacherEmail][day][periodIndex] = result.lecture;
                     populateTimetable(allTimetables[teacherEmail]);
@@ -443,6 +460,7 @@
                 deleteLectureButton.disabled = false;
             }
         });
+
         deleteLectureButton.addEventListener('click', function() {
             showCustomMessage('Are you sure you want to delete this lecture?', 'confirm', async () => {
                 showLoading(true);
@@ -492,11 +510,12 @@
 
         function renderAdjustmentRequests(adjustments) {
             adjustmentRequestsList.innerHTML = '';
-            if (adjustments.length === 0) {
+            if (!adjustments || adjustments.length === 0) { // Robust check for adjustments
                 noAdjustmentsMessage.style.display = 'block';
                 return;
             }
             noAdjustmentsMessage.style.display = 'none';
+
             adjustments.forEach(adj => {
                 const adjDiv = document.createElement('div');
                 adjDiv.classList.add('adjustment-request-item');
@@ -509,6 +528,7 @@
                 `;
                 adjustmentRequestsList.appendChild(adjDiv);
             });
+
             document.querySelectorAll('.view-details-button').forEach(button => {
                 button.addEventListener('click', function() {
                     const adjustmentId = this.dataset.id;
@@ -629,13 +649,14 @@
                 const messages = await response.json();
 
                 messageList.innerHTML = '';
-                if (messages.length === 0) {
+                if (!messages || messages.length === 0) { // Robust check for messages
                     noMessagesMessage.style.display = 'block';
                     unreadMessagesCountSpan.textContent = '';
                     unreadMessagesCountSpan.style.display = 'none';
                     return;
                 }
                 noMessagesMessage.style.display = 'none';
+
                 let unreadCount = 0;
                 messages.forEach(msg => {
                     const messageItem = document.createElement('div');
@@ -699,6 +720,7 @@
             document.getElementById('viewMessageBody').textContent = message.body;
 
             viewMessageModal.style.display = 'flex';
+
             if (!message.read && (message.recipient === currentUserEmail || (currentUserEmail === 'admin' && message.recipient === 'admin'))) {
                 markMessageAsRead(message.id);
             }
@@ -712,6 +734,7 @@
             composeForm.reset();
             composeModal.style.display = 'flex';
         });
+
         composeCloseButton.onclick = function() {
             composeModal.style.display = 'none';
         }
@@ -747,6 +770,7 @@
                 composeForm.querySelector('button[type="submit"]').disabled = false;
             }
         });
+
         window.onclick = function(event) {
             if (event.target == lectureModal) {
                 lectureModal.style.display = 'none';
@@ -769,7 +793,8 @@
         updateLiveTime();
         setInterval(updateLiveTime, 1000);
         populatePeriodTimes();
-        renderAdjustmentRequests(initialAdjustments.filter(adj => adj.status === 'Pending Admin Action'));
+        // Ensure initialAdjustments is an array before filtering
+        renderAdjustmentRequests(Array.isArray(initialAdjustments) ? initialAdjustments.filter(adj => adj.status === 'Pending Admin Action') : []);
         fetchAndRenderMessages();
 
         function getDefaultTimetable() {

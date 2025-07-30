@@ -1,30 +1,18 @@
 [
   {
+    "id": "65b59fd3-4ea1-44cf-ba5b-6d07a21777e2",
     "name": "Arnav Mittal",
     "email": "mittalarnav1601@gmail.com",
-    "password": "123",
+    "password": "$2b$10$plROkSk1ajwd34h5ftIx/e/Oj1XBnv5pYgX.HOaTBBfFFcmguzE/a",
     "role": "admin",
-    "profilePic": "1753167158461.jpg"
+    "profilePic": "profilePic-1753856027154-333891031.jpg"
   },
   {
-    "name": "gvbg",
-    "email": "gvbg7689@gmail.com",
-    "password": "123",
-    "role": "teacher",
-    "profilePic": "1753167696807.jpg"
-  },
-  {
-    "name": "modi",
-    "email": "narendramodi123@codeqoutient.com",
-    "password": "123",
-    "role": "teacher",
-    "profilePic": "1753168092174.jpg"
-  },
-  {
-    "name": "abc",
-    "email": "abc@gmail.com",
-    "password": "123",
-    "role": "teacher",
-    "profilePic": "1753597590019.jpg"
+    "id": "8944f069-994e-4736-abb3-9034292a65db",
+    "name": "Arnav Mittal",
+    "email": "z@123",
+    "password": "$2b$10$9wcncJhKuDIuhjTsPSvWJe/yaYjk4ANQC/3pmAqy7TIxq54hFD8GO",
+    "role": "admin",
+    "profilePic": "profilePic-1753858616154-912556084.jpg"
   }
 ]
