@@ -5,7 +5,7 @@ const session = require('express-session')
 require('dotenv').config()
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 5000
 
 const connectDB = require('./config/db')
 connectDB()
@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 app.set('view engine', 'ejs')
-
+K
 app.locals.escapeJsString = function(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
